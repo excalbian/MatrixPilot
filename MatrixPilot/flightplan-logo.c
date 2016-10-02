@@ -467,13 +467,13 @@ void flightplan_logo_update(void)
 	{
 		if (abs(IMUheight - navigate_get_goal(NULL)) < ((int16_t)altit.HeightMargin)) // reached altitude goal
 		{
-            desired_behavior._.altitude = 0;
+			desired_behavior._.altitude = 0;
 			process_instructions();
 		}
 	}
 	else
 	{
-		if (tofinish_line < WAYPOINT_RADIUS) // crossed the finish line
+		if (tofinish_line < WAYPOINT_PROXIMITY_RADIUS) // crossed the finish line
 		{
 			process_instructions();
 		}
