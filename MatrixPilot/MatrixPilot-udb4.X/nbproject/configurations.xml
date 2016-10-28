@@ -6,31 +6,29 @@
                    projectFiles="true">
       <logicalFolder name="Config" displayName="Config" projectFiles="true">
         <logicalFolder name="Cessna" displayName="Cessna" projectFiles="true">
-          <itemPath>../../Config/Cessna/airspeed_options.h</itemPath>
-          <itemPath>../../Config/Cessna/FSconfig.h</itemPath>
-          <itemPath>../../Config/Cessna/magnetometerOptions.h</itemPath>
-          <itemPath>../../Config/Cessna/mavlink_options.h</itemPath>
-          <itemPath>../../Config/Cessna/nv_memory_options.h</itemPath>
           <itemPath>../../Config/Cessna/options.h</itemPath>
+          <itemPath>../../Config/Cessna/options_airspeed.h</itemPath>
           <itemPath>../../Config/Cessna/options_auav3.h</itemPath>
-          <itemPath>../../Config/Cessna/osd_config.h</itemPath>
-          <itemPath>../../Config/Cessna/ports_config.h</itemPath>
+          <itemPath>../../Config/Cessna/options_magnetometer.h</itemPath>
+          <itemPath>../../Config/Cessna/options_mavlink.h</itemPath>
+          <itemPath>../../Config/Cessna/options_nv_memory.h</itemPath>
+          <itemPath>../../Config/Cessna/options_osd.h</itemPath>
+          <itemPath>../../Config/Cessna/options_ports.h</itemPath>
         </logicalFolder>
         <logicalFolder name="CloudsFly" displayName="CloudsFly" projectFiles="true">
           <itemPath>../../Config/CloudsFly/options.h</itemPath>
         </logicalFolder>
-        <itemPath>../../Config/options.h</itemPath>
-        <itemPath>../../Config/options_auav3.h</itemPath>
         <itemPath>../../Config/flightplan-logo.h</itemPath>
-        <itemPath>../../Config/options_magnetometer.h</itemPath>
+        <itemPath>../../Config/flightplan-waypoints.h</itemPath>
+        <itemPath>../../Config/options.h</itemPath>
         <itemPath>../../Config/options_airspeed.h</itemPath>
-        <itemPath>../../Config/options_servo_mix.h</itemPath>
+        <itemPath>../../Config/options_auav3.h</itemPath>
+        <itemPath>../../Config/options_magnetometer.h</itemPath>
+        <itemPath>../../Config/options_mavlink.h</itemPath>
+        <itemPath>../../Config/options_nv_memory.h</itemPath>
         <itemPath>../../Config/options_osd.h</itemPath>
         <itemPath>../../Config/options_ports.h</itemPath>
-        <itemPath>../../Config/options_nv_memory.h</itemPath>
-        <itemPath>../../Config/options_file_system.h</itemPath>
-        <itemPath>../../Config/options_mavlink.h</itemPath>
-        <itemPath>../../Config/flightplan-waypoints.h</itemPath>
+        <itemPath>../../Config/options_servo_mix.h</itemPath>
       </logicalFolder>
       <logicalFolder name="libDCM" displayName="libDCM" projectFiles="true">
         <itemPath>../../libDCM/dcmTypes.h</itemPath>
@@ -154,43 +152,50 @@
           <logicalFolder name="common" displayName="common" projectFiles="true">
             <itemPath>../../MAVLink/include/common/common.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_actuator_control_target.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_adsb_vehicle.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_altitude.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_att_pos_mocap.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_attitude.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_attitude_quaternion.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_attitude_quaternion_cov.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_attitude_setpoint_external.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_attitude_target.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_auth_key.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_autopilot_version.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_battery_status.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_camera_trigger.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_change_operator_control.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_change_operator_control_ack.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_collision.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_command_ack.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_command_int.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_command_long.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_control_system_state.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_data_stream.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_data_transmission_handshake.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_debug.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_debug_vect.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_distance_sensor.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_encapsulated_data.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_file_transfer_dir_list.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_estimator_status.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_extended_sys_state.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_file_transfer_protocol.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_file_transfer_res.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_file_transfer_start.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_follow_target.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_global_position_int.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_global_position_int_cov.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_global_position_setpoint_external_int.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_global_position_setpoint_int.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_global_vision_position_estimate.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_gps2_raw.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_gps2_rtk.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_gps_global_origin.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_gps_inject_data.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_gps_input.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_gps_raw_int.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_gps_rtcm_data.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_gps_rtk.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_gps_status.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_heartbeat.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_highres_imu.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_hil_actuator_controls.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_hil_controls.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_hil_gps.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_hil_optical_flow.h</itemPath>
@@ -198,11 +203,11 @@
             <itemPath>../../MAVLink/include/common/mavlink_msg_hil_sensor.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_hil_state.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_hil_state_quaternion.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_local_ned_position_setpoint_external.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_home_position.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_landing_target.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_local_position_ned.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_local_position_ned_cov.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_local_position_ned_system_global_offset.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_local_position_setpoint.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_log_data.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_log_entry.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_log_erase.h</itemPath>
@@ -212,6 +217,7 @@
             <itemPath>../../MAVLink/include/common/mavlink_msg_manual_control.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_manual_setpoint.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_memory_vect.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_message_interval.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_mission_ack.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_mission_clear_all.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_mission_count.h</itemPath>
@@ -220,6 +226,7 @@
             <itemPath>../../MAVLink/include/common/mavlink_msg_mission_item_int.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_mission_item_reached.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_mission_request.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_mission_request_int.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_mission_request_list.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_mission_request_partial_list.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_mission_set_current.h</itemPath>
@@ -227,9 +234,9 @@
             <itemPath>../../MAVLink/include/common/mavlink_msg_named_value_float.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_named_value_int.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_nav_controller_output.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_omnidirectional_flow.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_optical_flow.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_optical_flow_rad.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_param_map_rc.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_param_request_list.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_param_request_read.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_param_set.h</itemPath>
@@ -246,35 +253,28 @@
             <itemPath>../../MAVLink/include/common/mavlink_msg_rc_channels_raw.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_rc_channels_scaled.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_request_data_stream.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_roll_pitch_yaw_rates_thrust_setpoint.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_roll_pitch_yaw_speed_thrust_setpoint.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_roll_pitch_yaw_thrust_setpoint.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_resource_request.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_safety_allowed_area.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_safety_set_allowed_area.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_scaled_imu.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_scaled_imu2.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_scaled_imu3.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_scaled_pressure.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_scaled_pressure2.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_scaled_pressure3.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_serial_control.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_servo_output_raw.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_setpoint_6dof.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_setpoint_8dof.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_set_actuator_control_target.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_set_attitude_target.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_set_global_position_setpoint_int.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_set_gps_global_origin.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_set_local_position_setpoint.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_set_home_position.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_set_mode.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_set_position_target_global_int.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_set_position_target_local_ned.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_set_quad_motors_setpoint.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_set_quad_swarm_led_roll_pitch_yaw_thrust.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_set_quad_swarm_roll_pitch_yaw_thrust.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_set_roll_pitch_yaw_speed_thrust.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_set_roll_pitch_yaw_thrust.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_sim_state.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_state_correction.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_statustext.h</itemPath>
-            <itemPath>../../MAVLink/include/common/mavlink_msg_system_time.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_sys_status.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_system_time.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_terrain_check.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_terrain_data.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_terrain_report.h</itemPath>
@@ -282,9 +282,11 @@
             <itemPath>../../MAVLink/include/common/mavlink_msg_timesync.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_v2_extension.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_vfr_hud.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_vibration.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_vicon_position_estimate.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_vision_position_estimate.h</itemPath>
             <itemPath>../../MAVLink/include/common/mavlink_msg_vision_speed_estimate.h</itemPath>
+            <itemPath>../../MAVLink/include/common/mavlink_msg_wind_cov.h</itemPath>
             <itemPath>../../MAVLink/include/common/testsuite.h</itemPath>
             <itemPath>../../MAVLink/include/common/version.h</itemPath>
           </logicalFolder>
@@ -301,11 +303,16 @@
             <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_flexifunction_directory_ack.h</itemPath>
             <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_flexifunction_read_req.h</itemPath>
             <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_flexifunction_set.h</itemPath>
-            <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_force.h</itemPath>
             <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f13.h</itemPath>
             <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f14.h</itemPath>
             <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f15.h</itemPath>
             <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f16.h</itemPath>
+            <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f17.h</itemPath>
+            <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f18.h</itemPath>
+            <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f19.h</itemPath>
+            <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f20.h</itemPath>
+            <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f21.h</itemPath>
+            <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f22.h</itemPath>
             <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f2_a.h</itemPath>
             <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f2_b.h</itemPath>
             <itemPath>../../MAVLink/include/matrixpilot/mavlink_msg_serial_udb_extra_f4.h</itemPath>
@@ -351,6 +358,7 @@
         <logicalFolder name="USB" displayName="USB" projectFiles="true">
           <itemPath>../../Microchip/USB/usb_device_local.h</itemPath>
         </logicalFolder>
+        <itemPath>../../Microchip/FSconfig.h</itemPath>
         <itemPath>../../Microchip/HardwareProfile.h</itemPath>
         <itemPath>../../Microchip/NetConfig.h</itemPath>
         <itemPath>../../Microchip/Sockets.h</itemPath>
@@ -466,10 +474,10 @@
         <itemPath>../../MatrixPilot/data_services.c</itemPath>
         <itemPath>../../MatrixPilot/data_storage.c</itemPath>
         <itemPath>../../MatrixPilot/euler_angles.c</itemPath>
+        <itemPath>../../MatrixPilot/flight_state.c</itemPath>
         <itemPath>../../MatrixPilot/flightplan-logo.c</itemPath>
         <itemPath>../../MatrixPilot/flightplan-waypoints.c</itemPath>
         <itemPath>../../MatrixPilot/flightplan.c</itemPath>
-        <itemPath>../../MatrixPilot/flight_state.c</itemPath>
         <itemPath>../../MatrixPilot/fly_by_datalink.c</itemPath>
         <itemPath>../../MatrixPilot/helicalTurnCntrl.c</itemPath>
         <itemPath>../../MatrixPilot/main.c</itemPath>
@@ -616,7 +624,7 @@
         <property key="optimization-level" value="0"/>
         <property key="post-instruction-scheduling" value="default"/>
         <property key="pre-instruction-scheduling" value="default"/>
-        <property key="preprocessor-macros" value="UDB4=1"/>
+        <property key="preprocessor-macros" value="UDB4=1;"/>
         <property key="scalar-model" value="default"/>
         <property key="use-cci" value="false"/>
         <property key="use-iar" value="false"/>
@@ -702,82 +710,6 @@
         <property key="relaxed-math" value="false"/>
         <property key="save-temps" value="false"/>
       </C30Global>
-      <PICkit3PlatformTool>
-        <property key="ADC 1" value="true"/>
-        <property key="ADC 2" value="true"/>
-        <property key="AutoSelectMemRanges" value="auto"/>
-        <property key="DCI" value="true"/>
-        <property key="Freeze All Other Peripherals" value="true"/>
-        <property key="I2C1" value="true"/>
-        <property key="I2C2" value="true"/>
-        <property key="INPUT CAPTURE 1" value="true"/>
-        <property key="INPUT CAPTURE 2" value="true"/>
-        <property key="INPUT CAPTURE 3" value="true"/>
-        <property key="INPUT CAPTURE 4" value="true"/>
-        <property key="INPUT CAPTURE 5" value="true"/>
-        <property key="INPUT CAPTURE 6" value="true"/>
-        <property key="INPUT CAPTURE 7" value="true"/>
-        <property key="INPUT CAPTURE 8" value="true"/>
-        <property key="OUTPUT COMPARE 1" value="true"/>
-        <property key="OUTPUT COMPARE 2" value="true"/>
-        <property key="OUTPUT COMPARE 3" value="true"/>
-        <property key="OUTPUT COMPARE 4" value="true"/>
-        <property key="OUTPUT COMPARE 5" value="true"/>
-        <property key="OUTPUT COMPARE 6" value="true"/>
-        <property key="OUTPUT COMPARE 7" value="true"/>
-        <property key="OUTPUT COMPARE 8" value="true"/>
-        <property key="SPI 1" value="true"/>
-        <property key="SPI 2" value="true"/>
-        <property key="SecureSegment.SegmentProgramming" value="FullChipProgramming"/>
-        <property key="TIMER1" value="true"/>
-        <property key="TIMER2" value="true"/>
-        <property key="TIMER3" value="true"/>
-        <property key="TIMER4" value="true"/>
-        <property key="TIMER5" value="true"/>
-        <property key="TIMER6" value="true"/>
-        <property key="TIMER7" value="true"/>
-        <property key="TIMER8" value="true"/>
-        <property key="TIMER9" value="true"/>
-        <property key="ToolFirmwareFilePath"
-                  value="Press to browse for a specific firmware version"/>
-        <property key="ToolFirmwareOption.UseLatestFirmware" value="true"/>
-        <property key="UART 1" value="true"/>
-        <property key="UART 2" value="true"/>
-        <property key="hwtoolclock.frcindebug" value="false"/>
-        <property key="memories.aux" value="false"/>
-        <property key="memories.bootflash" value="true"/>
-        <property key="memories.configurationmemory" value="true"/>
-        <property key="memories.configurationmemory2" value="true"/>
-        <property key="memories.dataflash" value="true"/>
-        <property key="memories.eeprom" value="true"/>
-        <property key="memories.flashdata" value="true"/>
-        <property key="memories.id" value="true"/>
-        <property key="memories.programmemory" value="true"/>
-        <property key="memories.programmemory.end" value="0x2abff"/>
-        <property key="memories.programmemory.partition2" value="true"/>
-        <property key="memories.programmemory.partition2.end"
-                  value="${memories.programmemory.partition2.end.value}"/>
-        <property key="memories.programmemory.partition2.start"
-                  value="${memories.programmemory.partition2.start.value}"/>
-        <property key="memories.programmemory.start" value="0x0"/>
-        <property key="poweroptions.powerenable" value="false"/>
-        <property key="programmertogo.imagename" value=""/>
-        <property key="programoptions.donoteraseauxmem" value="false"/>
-        <property key="programoptions.eraseb4program" value="true"/>
-        <property key="programoptions.pgmspeed" value="2"/>
-        <property key="programoptions.preservedataflash" value="false"/>
-        <property key="programoptions.preserveeeprom" value="false"/>
-        <property key="programoptions.preserveprogramrange" value="false"/>
-        <property key="programoptions.preserveprogramrange.end" value="0x2abff"/>
-        <property key="programoptions.preserveprogramrange.start" value="0x0"/>
-        <property key="programoptions.preserveuserid" value="false"/>
-        <property key="programoptions.programcalmem" value="false"/>
-        <property key="programoptions.programuserotp" value="false"/>
-        <property key="programoptions.testmodeentrymethod" value="VDDFirst"/>
-        <property key="programoptions.usehighvoltageonmclr" value="false"/>
-        <property key="programoptions.uselvpprogramming" value="false"/>
-        <property key="voltagevalue" value="3.25"/>
-      </PICkit3PlatformTool>
     </conf>
   </confs>
 </configurationDescriptor>

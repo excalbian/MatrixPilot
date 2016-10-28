@@ -22,9 +22,15 @@
 #include "../../libUDB/libUDB.h"
 #include "../../libUDB/heartbeat.h"
 #include "../../libUDB/osd.h"
-#include "../../libUDB/ADchannel.h"
+//#include "../../libUDB/ADchannel.h"
+#include "../../MatrixPilot/osd_layout.h" // Defines whether using NTSC or PAL Video
 #include "font_data.h"
 
+#if (BOARD_TYPE == UDB5_BOARD || BOARD_TYPE == AUAV3_BOARD)
+#include "../../libUDB/mpu6000.h" // required for UDB5 and AUAV3 for heartbeat
+#endif
+
+void udb_init_clock(void);
 
 int charPosition = 0;
 boolean didDisplay = 0;
@@ -88,7 +94,11 @@ void udb_heartbeat_40hz_callback(void)
 			LED_GREEN = LED_ON;
 
 			osd_spi_write(0x04, 0);     // DMM set to 0
-			osd_spi_write(0x0, 0x08);   // VM0: enable display of OSD image
+#if (OSD_VIDEO_FORMAT == OSD_NTSC)
+			osd_spi_write(0x0, 0x08);   // VM0: enable display of OSD image, NTSC
+#else
+			osd_spi_write(0x0, 0x48);   // VM0: enable display of OSD image, PAL
+#endif
 
 			int row;
 			for (row = 0; row < 11; row++)
@@ -114,8 +124,13 @@ void udb_heartbeat_40hz_callback(void)
 int main(void)
 {
 	mcu_init();
+#if 1
 	udb_init();
-
+#else
+	// can we move to this and avoid calling udb_init()?
+	udb_init_clock();
+	udb_init_irq();
+#endif
 	while (1)
 	{
 		udb_run();
@@ -134,26 +149,34 @@ void udb_magnetometer_callback_data_available(void) {}
 void udb_callback_read_sensors(void) {}
 void udb_callback_radio_did_turn_off(void) {}
 
+#ifdef MPLABX
+// the hand maintained MPLABX projects don't include all the libUDB modules
+// hence we need to provide function place holders 
 
 void init_analogs(void) {}
-void init_events(void) {}
+//void init_events(void) {}
 void radioIn_init(void) {}
-void MPU6000_init16(void) {}
 
-int16_t failSafePulses = 0;
-int16_t noisePulses = 0;
-int16_t vref_adj;
+//#if (BOARD_TYPE == UDB5_BOARD || BOARD_TYPE == AUAV3_BOARD)
+//	void MPU6000_init16(callback_fptr_t fptr); // required for UDB5 and AUAV3 for heartbeat
+//#else
+//	void MPU6000_init16(void) {}
+//	int16_t vref_adj;
+//#endif
+
+//int16_t failSafePulses = 0;
+//int16_t noisePulses = 0;
 
 void init_gps(void) {}
 void udb_init_ADC(void) {}
 void calculate_analog_sensor_values(void) {}
 
-struct ADchannel udb_xaccel;
-struct ADchannel udb_yaccel;
-struct ADchannel udb_zaccel;
-struct ADchannel udb_xrate;
-struct ADchannel udb_yrate;
-struct ADchannel udb_zrate;
+//struct ADchannel udb_xaccel;
+//struct ADchannel udb_yaccel;
+//struct ADchannel udb_zaccel;
+//struct ADchannel udb_xrate;
+//struct ADchannel udb_yrate;
+//struct ADchannel udb_zrate;
 
 void start_pwm_outputs(void) {}
 void servoOut_init(void) {}
@@ -161,3 +184,8 @@ void servoOut_init(void) {}
 void udb_init_GPS(void) {}
 void udb_init_USART(void) {}
 void udb_eeprom_init(void) {}
+
+void udb_gyros_auto_zero_latch_up(void) {}
+void udb_gyros_auto_zero_latch_down(void) {}
+
+#endif // MPLABX

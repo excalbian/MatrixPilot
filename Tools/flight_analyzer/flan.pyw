@@ -7,7 +7,6 @@
 #   but WITHOUT ANY WARRANTY; without even the implied warranty of
 #   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #   GNU General Public License for more details.
-
 #  You should have received a copy of the GNU General Public License
 #  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -183,15 +182,26 @@ def C_pre_processor(C_source_filename):
             sys.exit()
     else:
         C_pre_processor_executable1 = \
-             os.path.join(programfiles,'Microchip\\MPLAB C30\\bin\\bin\\pic30-coff-cpp.exe')
+             os.path.join(programfiles,'Microchip\\xc16\\v1.26\\bin\\bin\\coff-cpp.exe')
         C_pre_processor_executable2 = \
+             os.path.join(programfiles,'Microchip\\xc16\\v1.27\\bin\\bin\\coff-cpp.exe')
+        C_pre_processor_executable3 = \
+             os.path.join(programfiles,'Microchip\\MPLAB C30\\bin\\bin\\pic30-coff-cpp.exe')
+        C_pre_processor_executable4 = \
                 os.path.join(programfiles,'Microchip\\mplabc30\\v3.25\\bin\\bin\\pic30-coff-cpp.exe')
+        
         # Check that the exectuable exists ....
         if os.path.exists(C_pre_processor_executable1):
             output = subprocess.Popen([C_pre_processor_executable1,C_source_filename],
                                      stdout=subprocess.PIPE).communicate()[0]
         elif os.path.exists(C_pre_processor_executable2):
             output = subprocess.Popen([C_pre_processor_executable2,C_source_filename],
+                                     stdout=subprocess.PIPE).communicate()[0]
+        elif os.path.exists(C_pre_processor_executable3):
+            output = subprocess.Popen([C_pre_processor_executable3,C_source_filename],
+                                     stdout=subprocess.PIPE).communicate()[0]
+        elif os.path.exists(C_pre_processor_executable4):
+            output = subprocess.Popen([C_pre_processor_executable4,C_source_filename],
                                      stdout=subprocess.PIPE).communicate()[0]
         else :
             error_message = "Cannot find the following important executable file:\n" + \
@@ -1904,6 +1914,7 @@ class origin() :
 class flight_log_book:
     def __init__(self) :
         self.entries = [] # an empty list of entries  at the beginning.
+        self.F2 = "Empty"
         self.F4 = "Empty"
         self.F5 = "Empty"
         self.F6 = "Empty"
@@ -1918,6 +1929,8 @@ class flight_log_book:
         self.F18 = "Empty"
         self.F19 = "Empty"
         self.F20 = "Empty"
+        self.F21 = "Empty"
+        self.F22 = "Empty"
         self.ardustation_pos = "Empty"
         self.rebase_time_to_race_time = False
         self.waypoints_in_telemetry = False
@@ -2019,16 +2032,21 @@ def create_telemetry_kmz(options,log_book):
     flight_origin.relocate_init() # This calculation must occur after origin has been calculated
     calculate_headings_pitch_roll(log_book, flight_origin, options)
     write_document_preamble(log_book,f_pos,telemetry_filename)
-    if (options.waypoint_selector == 1):
-        find_waypoint_start_and_end_times(log_book)
-        create_flown_waypoint_kml_using_waypoint_file(waypoint_filename,flight_origin,f_pos,flight_clock,log_book)
-    else :
-        # Check whether waypoint information is embedded in every line (later versions of MatrixPilot)
-        if log_book.waypoints_in_telemetry == True and \
-               log_book.F14 == "Recorded": # Check we received F14 telemetry before checking flight_plan_type
-            if log_book.flight_plan_type == 2 : # Logo waypoint flight plan
-                print "Processing Waypoint locations that are embedded in telemetry stream"
-                create_flown_waypoint_kml_using_telemetry(flight_origin,f_pos,flight_clock,log_book)
+    if log_book.waypoints_in_telemetry == True and \
+           log_book.F14 == "Recorded": # Check we received F14 telemetry before checking flight_plan_type
+        if log_book.flight_plan_type == 2 : # Logo waypoint flight plan
+            print "Processing Waypoint locations that are embedded in telemetry stream"
+            create_flown_waypoint_kml_using_telemetry(flight_origin,f_pos,flight_clock,log_book)
+            if (options.waypoint_selector == 1):
+                 showinfo(title = "Logo Waypoints embedded in teleemtry stream", message = \
+                          "There is no need to select a flightplan-waypoints.h file, or a "+
+                          "flightpan-logo.h file, when using Logo. This is because logo waypoints "+
+                          "are embedded in the actual telemetry stream when using Logo" )
+    elif  (options.waypoint_selector == 1):
+       find_waypoint_start_and_end_times(log_book)
+       print "Processing Waypoint locations from flightplan-waypoints.h file"
+       create_flown_waypoint_kml_using_waypoint_file(waypoint_filename,flight_origin,f_pos,flight_clock,log_book)
+        
     if log_book.primary_locator == GPS:
         print "Using GPS data for plotting waypoint routes"
     elif log_book.primary_locator == IMU :
@@ -2139,7 +2157,7 @@ def create_log_book(options) :
             log_book.yawkd_aileron = log.yawkd_aileron
             log_book.rollkp = log.rollkp
             log_book.rollkd = log.rollkd
-            log_book.aileron_boost = log.aileron_boost
+            log_book.aileron_boost = 0 # no longer used from Oct 2016
             log_book.F5 = "Recorded"
         elif log.log_format == "F6" : # We have a type of options.h line
             log_book.pitchgain = log.pitchgain
@@ -2214,6 +2232,10 @@ def create_log_book(options) :
             log_book.number_of_input_channels = log.number_of_input_channels
             log_book.channel_trim_values = log.channel_trim_values
             log_book.F20 = "Recorded"
+        elif log.log_format == "F21" : # Number of Input Channels and Trim Values
+            pass # flan not yet using sensor offsets
+        elif log.log_format == "F22" : # Number of Input Channels and Trim Values
+            pass # flan not using sensor values measured at boot up time
         elif log.log_format == "ARDUSTATION+++" : # Intermediate Ardustation line
             roll = log.roll
             pitch = log.pitch

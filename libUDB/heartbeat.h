@@ -42,11 +42,12 @@
 
 // Read-only value increments with each heartbeat
 extern uint16_t udb_heartbeat_counter;
+extern uint16_t udb_pulse_counter;
 
 
-inline void heartbeat(void);
-inline uint16_t heartbeat_cnt(void);
-inline boolean heartbeat_chk(uint16_t hertz);
+void heartbeat(void);
+uint16_t heartbeat_cnt(void);
+boolean heartbeat_chk(uint16_t hertz);
 
 
 #endif // HEARTBEAT_H

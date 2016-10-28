@@ -81,6 +81,10 @@
 #include <stdarg.h>
 #include <math.h>
 
+#if (USE_NV_MEMORY == 1)
+#include "parameter_datatypes.h"
+#include "data_services.h"
+#endif
 
 #if (MAVLINK_TEST_ENCODE_DECODE == 1)
 mavlink_message_t last_msg;
@@ -381,10 +385,6 @@ static void command_ack(uint16_t command, uint16_t result)
 	}
 }
 
-static void MAVLinkDataStream(mavlink_message_t* handle_msg) // MAVLINK_MSG_ID_DATA_STREAM
-{
-}
-
 static void MAVLinkRequestDataStream(mavlink_message_t* handle_msg) // MAVLINK_MSG_ID_REQUEST_DATA_STREAM
 {
 	int16_t freq = 0; // packet frequency
@@ -482,7 +482,7 @@ void MAVLinkCommandLong(mavlink_message_t* handle_msg) // MAVLINK_MSG_ID_COMMAND
 						break;
 				}
 				break;
-#endif // (USE_NV_MEMORY == 1)
+#else
 			case 245: // MAV_CMD_PREFLIGHT_STORAGE:
 				switch ((uint16_t)packet.param1)
 				{
@@ -499,6 +499,7 @@ void MAVLinkCommandLong(mavlink_message_t* handle_msg) // MAVLINK_MSG_ID_COMMAND
 						break;
 				}
 				break;
+#endif // (USE_NV_MEMORY == 1)
 			case 246: // halt
 				DPRINT("Halt - packet.command %u\r\n", packet.command);
 				break;
@@ -1061,13 +1062,13 @@ void mavlink_output_40hz(void)
 	spread_transmission_load = 10;
 	if (mavlink_frequency_send(streamRates[MAV_DATA_STREAM_EXTRA1], mavlink_counter_40hz + spread_transmission_load)) // SUE code historically ran at 8HZ
 	{
-		MAVUDBExtraOutput_40hz();
+		MAVUDBExtraOutput(); // Designed to be called at 8Hz.
 	}
 	// Send FORCE information
 	spread_transmission_load = 15;
 	if (mavlink_frequency_send(MAVLINK_RATE_FORCE, mavlink_counter_40hz + spread_transmission_load))
 	{
-		mavlink_msg_force_send(MAVLINK_COMM_0, msec, aero_force[0], aero_force[1], aero_force[2]);
+		//mavlink_msg_force_send(MAVLINK_COMM_0, msec, aero_force[0], aero_force[1], aero_force[2]);
 //static inline void mavlink_msg_force_send(mavlink_channel_t chan, uint32_t time_boot_ms, int16_t aero_x, int16_t aero_y, int16_t aero_z)
 	}
 	MAVParamsOutput_40hz();

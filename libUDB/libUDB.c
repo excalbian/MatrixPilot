@@ -41,8 +41,8 @@
 // Include the NV memory services if required
 #if (USE_NV_MEMORY == 1)
 #include "NV_memory.h"
-#include "data_storage.h"
-#include "data_services.h"
+#include "../MatrixPilot/data_storage.h"
+#include "../MatrixPilot/data_services.h"
 #endif
 
 // Include flexifunction mixers if required
@@ -110,7 +110,7 @@ void udb_init(void)
 	MPU6000_init16(&heartbeat);
 #endif
 
-	SRbits.IPL = 0; // turn on all interrupt priorities
+	udb_init_irq(); // turn on all interrupt priorities
 }
 
 void udb_run(void)
