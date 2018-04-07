@@ -74,6 +74,15 @@
 #define GPS_TYPE                            GPS_STD
 //#define DEFAULT_GPS_BAUD                    57600   // added for GPS_NMEA support
 
+////////////////////////////////////////////////////////////////////////////////
+// You can specify a level of good GNSS reception before MatrixPilot accepts "GPS ACQUIRED".
+// You can generally leaves these lines at their default values. A value of zero switches off the check.
+// The VDOP parameter is only available for Ublox GNSS devices. It is ignored for other GNSS units.
+// The metrics are not used by HILSIM or SILSIM.
+
+#define GNSS_HDOP_REQUIRED_FOR_STARTUP       20  //  Horizontal Dilution of Precision
+#define GNSS_VDOP_REQUIRED_FOR_STARTUP	     60  //  Vertical Dilution of Precision
+#define GNSS_SVS_REQUIRED_FOR_STARTUP	      6  //  Number of Sattelites in View
 
 ////////////////////////////////////////////////////////////////////////////////
 // Enable/Disable core features of this firmware
@@ -156,6 +165,7 @@
 
 // Define USE_BAROMETER_ALTITUDE to be 1 to use barometer for altitude correction.
 // Otherwise, if set to 0 only the GPS will be used.
+// Barometers such as the BMP180 must be shaded from sunlight or they will return false readings.
 #ifndef USE_BAROMETER_ALTITUDE
 #define USE_BAROMETER_ALTITUDE              0
 #endif
@@ -226,6 +236,7 @@
 #define CAMERA_YAW_INPUT_CHANNEL            CHANNEL_UNUSED
 #define CAMERA_MODE_INPUT_CHANNEL           CHANNEL_UNUSED
 #define OSD_MODE_SWITCH_INPUT_CHANNEL       CHANNEL_UNUSED
+#define RSSI_INPUT_CHANNEL                  CHANNEL_UNUSED
 #define MODE_INVERTED_CHANNEL               CHANNEL_UNUSED
 #define PASSTHROUGH_A_INPUT_CHANNEL         CHANNEL_UNUSED
 #define PASSTHROUGH_B_INPUT_CHANNEL         CHANNEL_UNUSED
@@ -268,6 +279,11 @@
 #define PASSTHROUGH_B_OUTPUT_CHANNEL        CHANNEL_UNUSED
 #define PASSTHROUGH_C_OUTPUT_CHANNEL        CHANNEL_UNUSED
 #define PASSTHROUGH_D_OUTPUT_CHANNEL        CHANNEL_UNUSED
+
+// Set to 1 to use Output 1 (udb5mini only) for throttle output and Castle Link
+// Live data reads to get voltage and current readings from a Castle ESC.
+// When set to 1, you should also set THROTTLE_OUTPUT_CHANNEL to 1.
+#define USE_CASTLE_LINK_THROTTLE            0
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -358,6 +374,7 @@
 // SERIAL_CAM_TRACK is used to output location data to a 2nd UDB, which will target its camera at this plane.
 // SERIAL_MAVLINK is a bi-directional binary format for use with QgroundControl, HKGCS or MAVProxy (Ground Control Stations.)
 // SERIAL_MAGNETOMETER outputs the automatically calculated offsets and raw magnetometer data.
+// SERIAL_MAG_CALIBRATE is used to calculate  magnetometer offsets for a static non changing calibration. 
 // Note that SERIAL_MAVLINK defaults to using a baud rate of 57600 baud (other formats default to 19200)
 
 #ifndef SERIAL_OUTPUT_FORMAT
@@ -368,7 +385,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Serial Output BAUD rate for either standard telemetry streams or MAVLink
 //  19200, 38400, 57600, 115200, 230400, 460800, 921600 // yes, it really will work at this rate
-//#define SERIAL_BAUDRATE                     19200
+#define SERIAL_BAUDRATE                     57600
 
 
 // NUM_ANALOG_INPUTS:
@@ -396,16 +413,22 @@
 // you'll also need to set up the RSSI_MIN_SIGNAL_VOLTAGE and RSSI_MAX_SIGNAL_VOLTAGE
 // to match your Receiver's RSSI format.  Note that some receivers use a higher voltage to
 // represent a lower signal strength, so you may need to set MIN higher than MAX.
+//
+// ANALOG_VOLTAGE2_INPUT_CHANNEL lets you measure Video Tx (or other second) battery voltage
 
 #define ANALOG_CURRENT_INPUT_CHANNEL        CHANNEL_UNUSED
 #define ANALOG_VOLTAGE_INPUT_CHANNEL        CHANNEL_UNUSED
 #define ANALOG_RSSI_INPUT_CHANNEL           CHANNEL_UNUSED
+#define ANALOG_VOLTAGE2_INPUT_CHANNEL       CHANNEL_UNUSED
 
 #define MAX_CURRENT                         900 // 90.0 Amps max for the sensor from SparkFun (in tenths of Amps)
 #define CURRENT_SENSOR_OFFSET               10  // Add 1.0 Amp to whatever value we sense
 
 #define MAX_VOLTAGE                         543 // 54.3 Volts max for the sensor from SparkFun (in tenths of Volts)
 #define VOLTAGE_SENSOR_OFFSET               0   // Add 0.0 Volts to whatever value we sense
+
+#define MAX_VOLTAGE2                        33  // 3.3 Volts max for direct Analog Input
+#define VOLTAGE2_SENSOR_OFFSET              0   // Add 0.0 Volts to whatever value we sense
 
 // RSSI - RC Receiver signal strength
 #define RSSI_MIN_SIGNAL_VOLTAGE             0.5     // Voltage when RSSI should show 0%
@@ -538,12 +561,12 @@
 // Uncomment the line below to activate the CUSTOM_OFFSETS feature in MatrixPilot.
 
 //#define CUSTOM_OFFSETS
-#define XACCEL_OFFSET (  000 ) 
-#define YACCEL_OFFSET (  000 )
-#define ZACCEL_OFFSET (  000 )
-#define XRATE_OFFSET  (  000 ) // not used by the UDB4
-#define YRATE_OFFSET  (  000 ) // not used by the UDB4
-#define ZRATE_OFFSET  (  000 ) // not used by the UDB4
+#define XACCEL_OFFSET ( 0 ) 
+#define YACCEL_OFFSET ( 0 )
+#define ZACCEL_OFFSET ( 0 )
+#define XRATE_OFFSET  ( 0 ) // not used by the UDB4
+#define YRATE_OFFSET  ( 0 ) // not used by the UDB4
+#define ZRATE_OFFSET  ( 0 ) // not used by the UDB4
 
 // Rudder/Yaw Control Gains
 // YAWKP_RUDDER is the proportional feedback gain for rudder control of yaw orientation.

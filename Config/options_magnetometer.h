@@ -18,12 +18,6 @@
 // You should have received a copy of the GNU General Public License
 // along with MatrixPilot.  If not, see <http://www.gnu.org/licenses/>.
 
-// To do: select magnetometer type, set MAGNETICDECLINATION,
-// and select orientation of the magnetometer, and remove the next 3 lines.
-#if (MAG_YAW_DRIFT == 1 && HILSIM != 1)
-#warning "Check magnetometer options."
-#endif
-
 // Define which magnetometer you are using by uncommenting one
 // of the #define lines below.
 // HMC5843 is the 3DRobotics HMC5843 (now out of production).
@@ -68,7 +62,17 @@
 //#define MAG_FLIPPED
 //#define MAG_DIRECT
 
+// Uncomment the following line for using Static Magnetometer Offsets. 
+// You will need to manually calibrate your plane's offsets in advance.
+// Set SERIAL_OUTPUT_FORMAT to  SERIAL_MAG_CALIBRATE to obtain calibration measurements.
+// Turn the plane through all dimensions X,Y,Z  (imagine you are painting a 3D globe by rotating the plane).
+// Inspect the last line of the telemetry file that you have created for the following static offsets,
+// and set them below.
+#define MAG_STATIC_OFFSETS
 
+#define MAG_STATIC_OFFSET_X       0
+#define MAG_STATIC_OFFSET_Y       0
+#define MAG_STATIC_OFFSET_Z       0
 
 // ************************************************************************
 // *** Users should not need to change anything below here ****************

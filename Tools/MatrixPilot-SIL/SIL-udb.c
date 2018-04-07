@@ -26,11 +26,14 @@
 #include <Time.h>
 #include <process.h>
 
+
+#ifndef MINGW
 struct timezone
 {
 	int tz_minuteswest; // of Greenwich
 	int tz_dsttime;     // type of dst correction to apply
 };
+#endif // MINGW
 
 #if 0
 int gettimeofday(struct timeval *tp, struct timezone *tzp);
@@ -86,9 +89,9 @@ inline int gettimeofday(struct timeval* p, void* tz /* IGNORED */)
 uint16_t udb_heartbeat_counter;
 uint16_t udb_pulse_counter;
 
-int16_t udb_pwIn[MAX_INPUTS];   // pulse widths of radio inputs
-int16_t udb_pwTrim[MAX_INPUTS]; // initial pulse widths for trimming
-int16_t udb_pwOut[MAX_OUTPUTS]; // pulse widths for servo outputs
+int16_t udb_pwIn[MAX_INPUTS+1];   // pulse widths of radio inputs
+int16_t udb_pwTrim[MAX_INPUTS+1]; // initial pulse widths for trimming
+int16_t udb_pwOut[MAX_OUTPUTS+1]; // pulse widths for servo outputs
 
 union udb_fbts_byte udb_flags;
 
@@ -314,7 +317,11 @@ uint16_t get_reset_flags(void)
 
 void sil_reset(void)
 {
+#ifdef _MSC_VER
+	const char* const args[3] = {mp_argv[0], UDB_HW_RESET_ARG, 0};
+#else
 	char* const args[3] = {mp_argv[0], UDB_HW_RESET_ARG, 0};
+#endif
 
 	sil_ui_will_reset();
 
@@ -366,12 +373,19 @@ void sil_handle_serial_rc_input(uint8_t *buffer, int bytesRead)
 	if (bytesRead >= 2 && buffer[0] == 0xFF && buffer[1] == 0xEE)
 	{
 		headerBytes = 2;
-		numServos = 8;
+		numServos = MAX_OUTPUTS;
 	}
 	else if (bytesRead >= 3 && buffer[0] == 0xFE && buffer[1] == 0xEF)
 	{
 		headerBytes = 3;
-		numServos = buffer[2];
+		if (buffer[2] > MAX_OUTPUTS)
+		{
+			numServos = MAX_OUTPUTS;
+		}
+		else
+		{
+			numServos = buffer[2];
+		}
 	}
 
 	if (numServos && bytesRead >= headerBytes + numServos*2 + 2)
@@ -450,9 +464,10 @@ boolean handleUDBSockets(void)
 
 static magnetometer_callback_funcptr magnetometer_callback = NULL;
 
-void rxMagnetometer(magnetometer_callback_funcptr callback)
+uint8_t rxMagnetometer(magnetometer_callback_funcptr callback)
 {
 	magnetometer_callback = callback;
+	return MAGNETOMETER_SERVICE_CAN_PAUSE;
 }
 
 void I2C_doneReadMagData(void)

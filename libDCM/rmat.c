@@ -114,14 +114,18 @@ static union longww gyroCorrectionIntegral[] =  { { 0 }, { 0 },  { 0 } };
 // accumulator for computing adjusted omega:
 fractional omegaAccum[] = { 0, 0, 0 };
 
-// gravity, as measured in plane coordinate system
+// gplane[] is a vector representing (gravity - acceleration) in the plane's coordinate system. 
+// gravity_vector_plane[], is gravity as measured in the plane's coordinate system
 #ifdef INITIALIZE_VERTICAL // VTOL vertical initialization
 static fractional gplane[] = { 0, -GRAVITY, 0 };
+static fractional gravit_vector_plane[] = { 0, -GRAVITY, 0 };
 int16_t aero_force[] = { 0 , GRAVITY , 0 };
 #else  // horizontal initialization
 static fractional gplane[] = { 0, 0, GRAVITY };
+static fractional gravity_vector_plane[] = { 0, 0, GRAVITY };
 int16_t aero_force[] = { 0 , 0 , -GRAVITY };
 #endif
+
 
 // horizontal velocity over ground, as measured by GPS (Vz = 0)
 fractional dirOverGndHGPS[] = { 0, RMAX, 0 };
@@ -139,9 +143,6 @@ fractional dirOverGndHrmat[] = { 0, RMAX, 0 };
 static fractional errorRP[] = { 0, 0, 0 };
 static fractional errorYawground[] = { 0, 0, 0 };
 static fractional errorYawplane[]  = { 0, 0, 0 };
-
-// measure of error in orthogonality, used for debugging purposes:
-static fractional error = 0;
 
 void yaw_drift_reset(void)
 {
@@ -192,9 +193,6 @@ static inline void read_accel(void)
 {
 #if (HILSIM == 1)
 	HILSIM_set_gplane(gplane);
-//	gplane[0] = g_a_x_sim.BB;
-//	gplane[1] = g_a_y_sim.BB;
-//	gplane[2] = g_a_z_sim.BB;
 #else
 	gplane[0] = XACCEL_VALUE;
 	gplane[1] = YACCEL_VALUE;
@@ -270,7 +268,6 @@ static int16_t omegaSOG(int16_t omega, int16_t speed)
 	}
 }
 
-#if (CENTRIFUGAL_WITHOUT_GPS == 1)
 static void adj_accel(int16_t angleOfAttack)
 {
 	// Performs centrifugal compensation without a GPS.
@@ -345,25 +342,22 @@ static void adj_accel(int16_t angleOfAttack)
 	}
 	// now compute omega vector cross velocity vector and adjust
 	accum.WW = (__builtin_mulss(omega_times_velocity , rotation_axis[1] ) ) << 2;
-	gplane[0] = gplane[0] - accum._.W1;
+	gravity_vector_plane[0] = gplane[0] - accum._.W1;
+	gravity_vector_plane[1] = gplane[1];
 	accum.WW = (__builtin_mulss(omega_times_velocity , rotation_axis[0] ) ) << 2;
-	gplane[0] = gplane[0] + accum._.W1;
-}
-#else
-static void adj_accel(int16_t angleOfAttack)
-{
-	union longww accum;
+	gravity_vector_plane[2] = gplane[2] + accum._.W1;
+	
+	// account for angle of attack and forward acceleration
 	int16_t air_speed_z;
 	// total (3D) airspeed in cm/sec is used to adjust for acceleration
 	// compute Z component of airspeed due to angle of attack
 	accum.WW = __builtin_mulsu(angleOfAttack, air_speed_3DGPS) << 2;
 	air_speed_z = accum._.W1;
 	// compute centrifugal and forward acceleration compensation
-	gplane[0] = gplane[0] - omegaSOG(omegaAccum[2], air_speed_3DGPS)+ omegaSOG(omegaAccum[1], air_speed_z);
-	gplane[2] = gplane[2] + omegaSOG(omegaAccum[0], air_speed_3DGPS);
-	gplane[1] = gplane[1] - omegaSOG(omegaAccum[0], air_speed_z) + ((uint16_t)(ACCELSCALE)) * forward_acceleration;
+	gravity_vector_plane[0] = gravity_vector_plane[0] + omegaSOG(omegaAccum[1], air_speed_z);
+	gravity_vector_plane[1] = gravity_vector_plane[1] - omegaSOG(omegaAccum[0], air_speed_z) + ((uint16_t)(ACCELSCALE)) * forward_acceleration;
+
 }
-#endif // CENTRIFUGAL_WITHOUT_GPS
 
 // The update algorithm!!
 static void rupdate(void)
@@ -422,16 +416,15 @@ static void normalize(void)
 	fractional norm;    // actual magnitude
 	fractional renorm;  // renormalization factor
 	fractional rbuff[9];
-	// compute -1/2 of the dot product between rows 1 and 2
-	error =  - VectorDotProduct(3, &rmat[0], &rmat[3]); // note, 1/2 is built into 2.14
-	// scale rows 1 and 2 by the error
-	VectorScale(3, &rbuff[0], &rmat[3], error);
-	VectorScale(3, &rbuff[3], &rmat[0], error);
-	// update the first 2 rows to make them closer to orthogonal:
-	VectorAdd(3, &rbuff[0], &rbuff[0], &rmat[0]);
-	VectorAdd(3, &rbuff[3], &rbuff[3], &rmat[3]);
-	// use the cross product of the first 2 rows to get the 3rd row
-	VectorCross(&rbuff[6], &rbuff[0], &rbuff[3]);
+	VectorCopy( 9 , rbuff , rmat ); // copy direction cosine matrix into buffer
+	
+	// Leave the bottom (tilt) row alone, it is usually the most accurate.
+	// Compute the first row as the cross product of second row with third row.
+	VectorCross(&rbuff[0], &rbuff[3] , &rbuff[6]);
+	// First row is now perpendicular to the second and third row.
+	// Compute the second row as the cross product of the third row with the first row.
+	VectorCross(&rbuff[3], &rbuff[6] , &rbuff[0]);
+	// All three rows are now mutually perpendicular.
 
 	// Use a Taylor's expansion for 1/sqrt(X*X) to avoid division in the renormalization
 
@@ -454,12 +447,12 @@ static void normalize(void)
 
 static void roll_pitch_drift(void)
 {
-	VectorCross(errorRP, gplane, &rmat[6]);
+	VectorCross(errorRP, gravity_vector_plane, &rmat[6]);
 //#ifdef CATAPULT_LAUNCH_ENABLE
 #define MAXIMUM_PITCH_ERROR ((fractional)(GRAVITY*0.25))
 	// the following is done to limit the pitch error during a catapult launch
 	// it has no effect during normal conditions, because acceleration
-	// compensated gplane is approximately aligned with rmat[6] vector
+	// compensated gravity_vector_plane is approximately aligned with rmat[6] vector
 	if (errorRP[0] >  MAXIMUM_PITCH_ERROR) errorRP[0] =  MAXIMUM_PITCH_ERROR;
 	if (errorRP[0] < -MAXIMUM_PITCH_ERROR) errorRP[0] = -MAXIMUM_PITCH_ERROR;
 //#endif // CATAPULT_LAUNCH_ENABLE

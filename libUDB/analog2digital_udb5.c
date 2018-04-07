@@ -46,7 +46,8 @@ uint8_t DmaBuffer = 0;
 uint16_t maxstack = 0;
 #endif
 
-#if 1   // these are the original/legacy values, switch this off to test Mark's new timing constants
+#if 0   // these are the original/legacy values, switch this off to test Mark's new timing constants
+// May-29-2017, WJP: Marks timing constants work well and they reduce CPU loading, so lets use them.
 #define ALMOST_ENOUGH_SAMPLES   216 // there are 222 or 223 samples in a sum
 #define ADCLK_DIV_N_MINUS_1     11  // ADC Conversion Clock Tad=Tcy*(ADCS+1)= (1/40M)*12 = 0.3us (3333.3Khz)
                                     // ADC Conversion Time for 12-bit Tc=14*Tad = 4.2us
@@ -89,7 +90,7 @@ uint16_t maxstack = 0;
 #endif
 
 // TAD is 1/ADC_CLK
-#define ADC_CLK (MIPS / (ADCLK_DIV_N_MINUS_1 + 1))
+#define ADC_CLK (FCY / (ADCLK_DIV_N_MINUS_1 + 1))
 
 // At FCY=40MHz, ADC_CLK=625KHz
 // At FCY=40MHz, ADC_RATE = 25 KHz
@@ -173,6 +174,7 @@ void udb_init_ADC(void)
 void __attribute__((__interrupt__,__no_auto_psv__)) _DMA0Interrupt(void)
 {
 	indicate_loading_inter;
+	set_ipl_on_output_pin;
 	interrupt_save_set_corcon;
 
 #if (RECORD_FREE_STACK_SPACE == 1)
@@ -265,6 +267,7 @@ void __attribute__((__interrupt__,__no_auto_psv__)) _DMA0Interrupt(void)
 	}
 
 	interrupt_restore_corcon;
+	unset_ipl_on_output_pin;
 }
 
 #endif // BOARD_TYPE

@@ -39,10 +39,10 @@
 #include "../libUDB/osd.h"
 #include "options_magnetometer.h"
 #include "options_osd.h"
-#if (SILSIM != 1)
+//#if (SILSIM != 1) // this caused a build failure when SILSIM and SERIAL_UDB_EXTRA are both defined
 #include "../libUDB/libUDB.h" // Needed for access to RCON
 #include "../libUDB/ADchannel.h"
-#endif
+//#endif
 #include "../libUDB/mcu.h"
 //#include "../libDCM/libDCM_internal.h" // Needed for access to internal DCM values
 #include "../libDCM/libDCM.h" // Needed for access to internal DCM value
@@ -449,15 +449,11 @@ static void serial_output(const char* format, ...)
 
 	if (remaining > 1)
 	{
+		udb_serial_stop_sending_data();
 		int16_t wrote = vsnprintf((char*)(&serial_buffer[start_index]), (size_t)remaining, format, arglist);
 		end_index = start_index + wrote;
-	}
-
-	if (sb_index == 0)
-	{
 		udb_serial_start_sending_data();
 	}
-
 	va_end(arglist);
 }
 #endif // USE_TELELOG
@@ -671,23 +667,31 @@ void telemetry_output_8hz(void)
 			if (!f13_print_prepare)
 			{
 				if (toggle)
+
 				{
-					serial_output("F2:T%li:S%d%d%d:N%li:E%li:A%li:W%i:"
-					              "a%i:b%i:c%i:d%i:e%i:f%i:g%i:h%i:i%i:"
-					              "c%u:s%i:cpu%u:"
-					              "as%u:wvx%i:wvy%i:wvz%i:ma%i:mb%i:mc%i:svs%i:hd%i:",
-					    tow.WW, udb_flags._.radio_on, dcm_flags._.nav_capable, state_flags._.GPS_steering,
-					    lat_gps.WW, lon_gps.WW, alt_sl_gps.WW, waypointIndex,
-					    rmat[0], rmat[1], rmat[2],
-					    rmat[3], rmat[4], rmat[5],
-					    rmat[6], rmat[7], rmat[8],
-					    (uint16_t)cog_gps.BB, sog_gps.BB, (uint16_t)udb_cpu_load(), 
-					    air_speed_3DIMU,
-				    estimatedWind[0], estimatedWind[1], estimatedWind[2],
+#if (MP_WORDSIZE == 64)
+                    serial_output("F2:T%i:S%d%d%d:N%i:E%i:A%i:W%i:"
+                            "a%i:b%i:c%i:d%i:e%i:f%i:g%i:h%i:i%i:"
+                            "c%u:s%i:cpu%u:"
+                            "as%u:wvx%i:wvy%i:wvz%i:ma%i:mb%i:mc%i:svs%i:hd%i:",
+#else
+                    serial_output("F2:T%li:S%d%d%d:N%li:E%li:A%li:W%i:"
+                            "a%i:b%i:c%i:d%i:e%i:f%i:g%i:h%i:i%i:"
+                            "c%u:s%i:cpu%u:"
+                            "as%u:wvx%i:wvy%i:wvz%i:ma%i:mb%i:mc%i:svs%i:hd%i:",                  
+#endif
+					tow.WW, udb_flags._.radio_on, dcm_flags._.nav_capable, state_flags._.GPS_steering,
+					lat_gps.WW, lon_gps.WW, alt_sl_gps.WW, waypointIndex,
+					rmat[0], rmat[1], rmat[2],
+					rmat[3], rmat[4], rmat[5],
+					rmat[6], rmat[7], rmat[8],
+					(uint16_t)cog_gps.BB, sog_gps.BB, (uint16_t)udb_cpu_load(), 
+					air_speed_3DIMU,
+                    estimatedWind[0], estimatedWind[1], estimatedWind[2],
 #if (MAG_YAW_DRIFT == 1)
 				    magFieldEarth[0], magFieldEarth[1], magFieldEarth[2],
 #else
-				    (int16_t)0, (int16_t)0, (int16_t)0,
+				    (uint16_t)0, (uint16_t)0, (uint16_t)0,
 #endif // MAG_YAW_DRIFT
 				    svs, hdop);
 
@@ -737,6 +741,7 @@ void telemetry_output_8hz(void)
 					serial_output("stk%d:", (int16_t)(4096-maxstack));
 #endif // RECORD_FREE_STACK_SPACE
 					serial_output("\r\n");
+					serial_output("F23:G%i:V%i:\r\n",gps_parse_errors,vdop);
 				}
 			}
 			if (state_flags._.f13_print_req == 1)
@@ -750,7 +755,11 @@ void telemetry_output_8hz(void)
 				{
 					f13_print_prepare = false;
 				}
-				serial_output("F13:week%i:origN%li:origE%li:origA%li:\r\n", week_no, lat_origin.WW, lon_origin.WW, alt_origin);
+#if (MP_WORDSIZE == 64)
+				serial_output("F13:week%i:origN%i:origE%i:origA%i:\r\n", week_no, lat_origin.WW, lon_origin.WW, alt_origin);
+#else
+                serial_output("F13:week%i:origN%li:origE%li:origA%li:\r\n", week_no, lat_origin.WW, lon_origin.WW, alt_origin);
+#endif
 				serial_output("F20:NUM_IN=%i:TRIM=",NUM_INPUTS);
 				for (i = 1; i <= NUM_INPUTS; i++)
 				{
@@ -791,7 +800,7 @@ extern int16_t I2ERROR;
 extern int16_t I2messages;
 extern int16_t I2interrupts;
 
-#if (BOARD_TYPE == UDB4_BOARD || BOARD_TYPE == UDB5_BOARD)
+#if (BOARD_TYPE == UDB4_BOARD || BOARD_TYPE == UDB5_BOARD || BOARD_TYPE == AUAV3_BOARD )
 #define I2CCONREG I2C2CON
 #define I2CSTATREG I2C2STAT
 #else
@@ -810,19 +819,23 @@ void telemetry_output_8hz(void)
 
 void telemetry_output_8hz(void)
 {
-	if (udb_pulse_counter % 10 == 0) // Every 2 runs (5 heartbeat counts per 8Hz)
+	if (udb_pulse_counter % (HEARTBEAT_HZ / 4) == 0) 
 	{
-		serial_output("MagOffset: %i, %i, %i\r\n"
-		              "MagBody: %i, %i, %i\r\n"
-		              "MagEarth: %i, %i, %i\r\n"
-		              "MagGain: %i, %i, %i\r\n"
-		              "Calib: %i, %i, %i\r\n"
-		              "MagMessage: %i\r\n"
-		              "TotalMsg: %i\r\n"
-		              //"I2CCON: %X, I2CSTAT: %X, I2ERROR: %X\r\n" // PDH
-			      "I2CCON: %X, I2CSTAT: %X\r\n"
+		serial_output(" MagOffset,%i,%i,%i,"
+		              " MagBody,%i,%i,%i,"
+		              " MagEarth,%i,%i,%i,"
+		              " MagGain,%i,%i,%i,"
+		              " Calib,%i,%i,%i,"
+		              " MagMessage,%i,"
+		              " TotalMsg,%i,"
+			      " I2CCON,0x%X, I2CSTAT,0x%X"
 		              "\r\n",
+#ifdef MAG_STATIC_OFFSETS
+		    
+		    udb_staticMagOffset[0], udb_staticMagOffset[1], udb_staticMagOffset[2],
+#else
 		    udb_magOffset[0]>>OFFSETSHIFT, udb_magOffset[1]>>OFFSETSHIFT, udb_magOffset[2]>>OFFSETSHIFT,
+#endif
 		    udb_magFieldBody[0], udb_magFieldBody[1], udb_magFieldBody[2],
 		    magFieldEarth[0], magFieldEarth[1], magFieldEarth[2],
 		    magGain[0], magGain[1], magGain[2],
@@ -833,6 +846,54 @@ void telemetry_output_8hz(void)
 		    I2CCONREG, I2CSTATREG);
 	}
 }
+
+#elif (SERIAL_OUTPUT_FORMAT == SERIAL_MAG_CALIBRATE)
+
+static int16_t mag_x_axis_max = 0;
+static int16_t mag_x_axis_min = 0;
+static int16_t mag_y_axis_max = 0;
+static int16_t mag_y_axis_min = 0;
+static int16_t mag_z_axis_max = 0;
+static int16_t mag_z_axis_min = 0;
+static boolean first_time_through = true;
+
+
+void telemetry_output_8hz(void)
+{
+	if (udb_pulse_counter % (HEARTBEAT_HZ / 4) == 0) 
+	{
+		if (first_time_through)
+		{
+			first_time_through = false;
+			mag_x_axis_max = (udb_magFieldBody[0] + (udb_staticMagOffset[0]));
+			mag_x_axis_min = (udb_magFieldBody[0] + (udb_staticMagOffset[0]));
+			 mag_y_axis_max = (udb_magFieldBody[1] +(udb_staticMagOffset[1]));
+			mag_y_axis_min = (udb_magFieldBody[1] + (udb_staticMagOffset[1]));
+			mag_z_axis_max = (udb_magFieldBody[2] + (udb_staticMagOffset[2]));
+			mag_z_axis_min = (udb_magFieldBody[2] + (udb_staticMagOffset[2]));
+		}
+		else
+		{
+			if (mag_x_axis_max > (udb_magFieldBody[0] + (udb_staticMagOffset[0]))) { mag_x_axis_max = (udb_magFieldBody[0] + (udb_staticMagOffset[0])); }
+			if (mag_x_axis_min < (udb_magFieldBody[0] + (udb_staticMagOffset[0]))) { mag_x_axis_min = (udb_magFieldBody[0] + (udb_staticMagOffset[0])); }
+			if (mag_y_axis_max > (udb_magFieldBody[1] + (udb_staticMagOffset[1]))) { mag_y_axis_max = (udb_magFieldBody[1] + (udb_staticMagOffset[1])); }
+			if (mag_y_axis_min < (udb_magFieldBody[1] + (udb_staticMagOffset[1]))) { mag_y_axis_min = (udb_magFieldBody[1] + (udb_staticMagOffset[1])); }
+			if (mag_z_axis_max > (udb_magFieldBody[2] + (udb_staticMagOffset[2]))) { mag_z_axis_max = (udb_magFieldBody[2] + (udb_staticMagOffset[2])); }
+			if (mag_z_axis_min < (udb_magFieldBody[2] + (udb_staticMagOffset[2]))) { mag_z_axis_min = (udb_magFieldBody[2] + (udb_staticMagOffset[2])); }
+		}
+		serial_output("Mag X,%i, Mag Y,%i, Mag Z,%i, Offset X,%i, Offset Y,%i, Offset Z,%i\r\n",
+		// We add in the udb_static_MagOffset in case user is re-calibrating and has left an old one defined.
+		udb_magFieldBody[0] + (udb_staticMagOffset[0]),
+		udb_magFieldBody[1] + (udb_staticMagOffset[1]),
+		udb_magFieldBody[2] + (udb_staticMagOffset[2]),
+		(mag_x_axis_max + mag_x_axis_min)  / 2,
+		(mag_y_axis_max + mag_y_axis_min)  / 2,
+		(mag_z_axis_max + mag_z_axis_min)  / 2
+		);
+		
+	}
+}
+
 
 #elif (SERIAL_OUTPUT_FORMAT == SERIAL_CAM_TRACK)
 

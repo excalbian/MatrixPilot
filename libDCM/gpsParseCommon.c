@@ -37,6 +37,7 @@ union longbbbb lat_gps_, lon_gps_;
 union longbbbb alt_sl_gps_;
 union longbbbb tow_;
 union intbb hdop_;
+union intbb vdop_;
 union longbbbb date_gps_, time_gps_;
 
 extern void (*msg_parse)(uint8_t gpschar);
@@ -44,6 +45,7 @@ extern void (*msg_parse)(uint8_t gpschar);
 static const uint8_t* gps_out_buffer = 0;
 static int16_t gps_out_buffer_length = 0;
 static int16_t gps_out_index = 0;
+uint16_t gps_parse_errors = 0;
 
 int32_t get_gps_date(void)
 {
@@ -203,7 +205,7 @@ int16_t calculate_week_num(int32_t date)
 	day = date % 100;
 
 	// Wait until we have real date data
-	if (day == 0 || month == 0) return 0;
+	if (day < 1 || day > 31 || month < 1 || month > 12) return 0;
 
 	// Begin counting at May 1, 2011 since this 1st was a Sunday
 	m = 5;                          // May
@@ -248,4 +250,21 @@ int32_t calculate_time_of_week(int32_t time)
 	h = time % 100;
 	time = (((((int32_t)(h)) * 60) + m) * 60 + s) * 1000 + ms;
 	return (time + (((int32_t)day_of_week) * MS_PER_DAY));
+}
+
+boolean gps_check_startup_metrics(void)
+{
+	
+#if (HILSIM == 1)
+	return(true);
+#endif
+	if ((hdop <= GNSS_HDOP_REQUIRED_FOR_STARTUP) && 
+#if ((GPS_TYPE == GPS_UBX_4HZ) || (GPS_TYPE == GPS_UBX_2HZ))
+		(vdop <= GNSS_VDOP_REQUIRED_FOR_STARTUP) &&
+#endif
+		(svs  >=  GNSS_SVS_REQUIRED_FOR_STARTUP))
+	{
+		return(true);
+	}
+	return(false);
 }

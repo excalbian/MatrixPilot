@@ -238,9 +238,6 @@ class base_telemetry :
         self.aero_force_x = 0
         self.aero_force_y = 0
         self.aero_force_z = 0
-        self.location_error_earth_x = 0
-        self.location_error_earth_y = 0
-        self.location_error_earth_z = 0
         
         self.feed_forward = 0.0
         self.navigation_max_earth_vertical_axis_rotation_rate = 0.0
@@ -268,6 +265,7 @@ class base_telemetry :
         self.battery_amphours = 0
         self.desired_height = 0
         self.memory_stack_free = 0
+        self.gps_parse_errors = 0
 
 class mavlink_telemetry(base_telemetry):
     """Parse a single binary mavlink message record"""
@@ -352,9 +350,9 @@ class mavlink_telemetry(base_telemetry):
                 self.IMUlocationy_W1 = int(telemetry_file.msg.sue_imu_location_y)
                 self.IMUlocationz_W1 = int(telemetry_file.msg.sue_imu_location_z)
 
-                self.location_error_earth_x = int(telemetry_file.msg.sue_location_error_earth_x)
-                self.location_error_earth_y = int(telemetry_file.msg.sue_location_error_earth_y)
-                self.location_error_earth_z = int(telemetry_file.msg.sue_location_error_earth_z)
+                self.lex = int(telemetry_file.msg.sue_location_error_earth_x)
+                self.ley = int(telemetry_file.msg.sue_location_error_earth_y)
+                self.lez = int(telemetry_file.msg.sue_location_error_earth_z)
                 
                 self.flags = int(telemetry_file.msg.sue_flags)
                 self.osc_fails = int(telemetry_file.msg.sue_osc_fails)
@@ -545,7 +543,7 @@ class ascii_telemetry(base_telemetry):
         self.line_no = line_no
 
         # Discard lines that have non alpha numeric characters and so are corrupt
-        match = re.search("[^a-zA-Z:\d\r\n\s\/=_,.-]", line)
+        match = re.search("[^a-zA-Z:\d\r\n\s\/=_,.*-]", line)
         if match :
              print "Bad chars so discarding; [", match.group(0),"]",
              return "Error"
@@ -1351,6 +1349,35 @@ class ascii_telemetry(base_telemetry):
                     return "Error"
             else :
                 pass
+            match = re.match(".*:tmp([-0-9]*?):",line) # temperature of barometer chip
+            if match :
+                try:
+                    self.barometer_temperature  = int(match.group(1))
+                except:
+                    print "Corrupt barometer_temperature (:tmp) in line", line_no
+                    return "Error"
+            else :
+                pass
+            match = re.match(".*:prs([-0-9]*?):",line) # pressure measured by barometer
+            if match :
+                try:
+                    self.barometer_pressure  = int(match.group(1))
+                except:
+                    print "Corrupt barometer_pressure (:prs) in line", line_no
+                    return "Error"
+            else :
+                pass
+            match = re.match(".*:alt([-0-9]*?):",line) # Altitude derived from barometer
+            if match :
+                try:
+                    self.barometer_altitude  = int(match.group(1))
+                except:
+                    print "Corrupt barometer_altitude (:alt) in line", line_no
+                    return "Error"
+            else :
+                pass
+            
+            
             
              # line was parsed without major errors
             return "F2"
@@ -1813,7 +1840,7 @@ class ascii_telemetry(base_telemetry):
                 self.id_lead_pilot =  match.group(1)
             else :
                 print "Failure parsing ID_LEAD_PILOT at line", line_no
-            match = re.match(".*:IDD=(.*?:.*?):",line) # ID_DIY_DRONES_URL
+            match = re.match(".*:IDD=(.*):.?$",line) # ID_DIY_DRONES_URL
             if match :
                 self.id_diy_drones_url = match.group(1)
             else :
@@ -1934,16 +1961,27 @@ class ascii_telemetry(base_telemetry):
             pass  # Not using this telemetry yet
             return "F21"
 
-         #################################################################
+        #################################################################
         # Try Another format of telemetry
         match = re.match("^F22:",line) # If line starts with F22
         if match :
             pass  # Not using this telemetry yet
             return "F22"
+
+        #################################################################
+        # Try Another format of telemetry
+        match = re.match("^F23:",line) # If line starts with F23
+        if match :
+            # Parse the line for number of gps parse errors:-
+            match = re.match(".*:G([0-9]*?):",line)   # gps_parse_errors
+            if match :
+                self.gps_parse_errors  = int(match.group(1))
+            else :
+                print "Failure parsing gps_parse_errors at line", line_no
+            return "F23"       
         
         #################################################################
         # Try Another format of telemetry
-        
         
         match = re.match("^<tm>",line)
         if  match :

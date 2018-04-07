@@ -1,6 +1,6 @@
 #------------------------------------------------------------------------------
 # NOTE: (Windows) this makefile assumes that the MinGW\bin & MinGW\msys\1.0\bin
-#                 directories are added to the PATH environment variable.
+#                 directories are added to the PATH environment variable. (Peter pls note this anciant comment)
 #
 # Top level MatrixPilot makefile
 #
@@ -31,6 +31,7 @@ TARGET_NAME ?= MatrixPilot
 #SOURCE_DIR ?= ..
 DEVICE ?= SIL
 
+# RobD - revist this, what is req.?
 #$(if $(filter $(MAKE_VERSION),3.80 3.81 3.90 3.92),,\
 #  $(error This makefile requires one of GNU make version ….))
 
@@ -78,6 +79,7 @@ SED := sed
 #TEST := [
 space = $(empty) $(empty)
 comma := ,
+CPP := g++
 
 SMC = java -jar $(SOURCE_DIR)/Tools/Smc.jar
 ifeq ($(V),)
@@ -98,7 +100,6 @@ define source-path-rel-dir
 endef
 $(foreach l,$(subst /, ,$(subst $(ROOT_DIR),,$(CURDIR))),$(eval $(call source-path-rel-dir,$l)))
 SOURCE_DIR ?= $(subst $(space),/,$(TMP_SRC_DIR))
-#$(warning SOURCE_DIR: $(SOURCE_DIR))
 MKFILES_DIR = $(SOURCE_DIR)/Tools/makefiles
 
 ################################################################################
@@ -118,9 +119,8 @@ MKFILES_DIR = $(SOURCE_DIR)/Tools/makefiles
 include $(MKFILES_DIR)/target-$(TARGET_NAME).mk
 include $(MKFILES_DIR)/device-$(DEVICE).mk
 modules := $(addprefix $(SOURCE_DIR)/,$(modules))
-#INCPATH := $(addprefix $(SOURCE_DIR)/,$(cfgpath)) $(addprefix $(SOURCE_DIR)/,$(incpath))
 
-ifneq ($(CONFIG),) 
+ifneq ($(CONFIG),)
 INCPATH += $(addprefix $(SOURCE_DIR)/,$(cfgpath)/$(CONFIG))
 endif
 INCPATH += $(addprefix $(SOURCE_DIR)/,$(cfgpath))
@@ -131,7 +131,11 @@ INCPATH += $(addprefix $(SOURCE_DIR)/,$(incpath))
 ################################################################################
 # Determine the full target names and include the toolchain specific makefile
 
-TARGET_LNAME := $(TARGET_NAME)-$(DEVICE)-$(TOOLCHAIN)
+ifneq ($(CONFIG),)
+TARGET_LNAME := $(TARGET_NAME)-$(DEVICE)-$(CONFIG)
+else
+TARGET_LNAME := $(TARGET_NAME)-$(DEVICE)
+endif
 TARGET_MAP := $(TARGET_LNAME).map
 TARGET := $(TARGET_LNAME).$(TARGET_TYPE)
 
@@ -147,7 +151,8 @@ subdirectory = $(patsubst $(SOURCE_DIR)/%/module.mk,%, \
 
 # $(call source-to-object, source-file-list)
 source-to-object = $(subst $(SOURCE_DIR)/,,$(subst .c,.o,$(filter %.c,$1))) \
-                   $(subst $(SOURCE_DIR)/,,$(subst .s,.o,$(filter %.s,$1)))
+                   $(subst $(SOURCE_DIR)/,,$(subst .s,.o,$(filter %.s,$1))) \
+                   $(subst $(SOURCE_DIR)/,,$(subst .cpp,.o,$(filter %.cpp,$1)))
 
 # $(call make-library, library-name, source-file-list)
 define make-library
@@ -170,6 +175,7 @@ endef
 vpath %.c $(SOURCE_DIR)
 vpath %.s $(SOURCE_DIR)
 vpath %.h $(INCPATH)
+vpath %.cpp $(SOURCE_DIR)
 vpath %.inc $(INCPATH)
 vpath %.dot $(SOURCE_DIR)
 vpath %.sm $(SOURCE_DIR)
@@ -182,13 +188,12 @@ dependencies = $(subst .o,.d,$(objects))
 
 all: 
 include $(addsuffix /module.mk,$(modules))
-#include $(patsubst %,$(SOURCE_DIR)/%/module.mk,$(modules))
-#INCPATH += $(incpath)
 INCLUDES += $(addprefix -I,$(INCPATH))
 DEFINES += $(addprefix -D,$(DEVICE)=1 $(DEFS) $(defines))
 
 ifneq ($(MAKE_RESTARTS),1)
 $(warning *******************************************************************************)
+$(warning $(PWD))
 $(warning Building $(TARGET))
 $(warning modules: $(subst $(SOURCE_DIR)/,,$(modules)))
 $(warning library: $(subst $(SOURCE_DIR)/,,$(libraries)))
@@ -253,6 +258,9 @@ endif
 ################################################################################
 # Dependency and Object generation rules
 
+# With the GNU C compiler, you may wish to use the ‘-MM’ flag instead of ‘-M’.
+# This omits prerequisites on system header files.
+
 %.d: %.c
 	$(Q) $(CC) $(TARGET_ARCH) $(CFLAGS) $(DEFINES) $(INCLUDES) -M $< | \
 	$(SED) $(QT)s,\($(notdir $*)\.o\) *:,$(dir $@)\1 $@: ,$(QT) > $@.tmp
@@ -261,13 +269,32 @@ endif
 %.o: %.c
 	$(Q) $(CC) $(TARGET_ARCH) -c $(CFLAGS) $(DEFINES) $(INCLUDES) -o $@ $<
 
+%.d: %.cpp
+	$(Q) $(CPP) $(TARGET_ARCH) $(CFLAGS) $(DEFINES) $(INCLUDES) -M $< | \
+	$(SED) $(QT)s,\($(notdir $*)\.o\) *:,$(dir $@)\1 $@: ,$(QT) > $@.tmp
+	$(Q) $(MV) $@.tmp $@
+
+%.o: %.cpp
+	$(Q) $(CPP) $(TARGET_ARCH) -c $(CFLAGS) $(DEFINES) $(INCLUDES) -o $@ $<
+
 %.d: %.s
 	$(Q) $(CC) $(TARGET_ARCH) $(AFLAGS) $(DEFINES) $(INCLUDES) -M $< | \
 	$(SED) $(QT)s,\($(notdir $*)\.o\) *:,$(dir $@)\1 $@: ,$(QT) > $@.tmp
 	$(Q) $(MV) $@.tmp $@
 
+# NOTE: this version supports the arm-none-eabi toolchain
+#%.o: %.s
+#	$(Q) $(ASM) $(TARGET_ARCH) $(AFLAGS) -c $< -o $@ $(INCLUDES) 
+
 %.o: %.s
-	$(Q) $(CC) $(TARGET_ARCH) -c -o $@ $< $(AFLAGS),$(subst $(space),$(comma),$(INCLUDES))
+	$(Q) $(ASM) $(TARGET_ARCH) -c $< -o $@ $(AFLAGS) $(INCLUDES) 
+
+# NOTE: this version may be needed to support the C8/MC16 microchip assembler
+#%.o: %.s
+#	$(CC) $(TARGET_ARCH) -c $< -o $@ $(AFLAGS),$(subst $(space),$(comma),$(INCLUDES))
+
+# Original microchip command line (works)
+#	$(Q) $(CC) $(TARGET_ARCH) -c -o $@ $< $(AFLAGS),$(subst $(space),$(comma),$(INCLUDES))
 
 ################################################################################
 # Library generation rules (note: seems to work without them)
@@ -279,7 +306,10 @@ endif
 # Windows and *nix target rules
 
 %.exe: $(objects) $(libraries)
-	$(Q) $(CC) -o $@ $(LFLAGS) $(objects) $(libraries) $(LIBS)
+	$(Q) $(CPP) -o $@ $(objects) $(libraries) $(LFLAGS) $(LIBS)
+
+%.xpl: $(objects) $(libraries)
+	$(Q) $(CPP) -o $@ $(objects) $(libraries) $(LFLAGS) $(LIBS)
 
 %.out: %.exe
 	$(Q) mv $< $@
@@ -307,7 +337,7 @@ endif
 	$(Q) sleep 1
 
 ################################################################################
-# State Machine Compiler (SMC) rules
+# State Machine Compiler (SMC) rules (work in progress, aka, our state machines could better be defined with specialised tools
 
 %_sm.h %_sm.c : %.sm
 	$(SMC) $(SMC_FLAGS) $<
@@ -320,3 +350,10 @@ endif
 
 %_sm.html: %.sm
 	$(SMC) -table $<
+
+################################################################################
+#
+
+print-%:
+	@echo '$*=$($*)'
+

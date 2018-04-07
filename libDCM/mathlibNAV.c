@@ -172,9 +172,9 @@ void rotate_2D(struct relative2D* xy, int8_t angle)
 
 	sinang = sine(angle);
 	cosang = cosine(angle);
-	accum.WW = ((__builtin_mulss(cosang, xy->x) - __builtin_mulss(sinang, xy->y)) << 2);
+	accum.WW = ((__builtin_mulss(cosang, xy->x) - __builtin_mulss(sinang, xy->y)) << 2) + 0x00008000;
 	newx = accum._.W1;
-	accum.WW = ((__builtin_mulss(sinang, xy->x) + __builtin_mulss(cosang, xy->y)) << 2);
+	accum.WW = ((__builtin_mulss(sinang, xy->x) + __builtin_mulss(cosang, xy->y)) << 2) + 0x00008000;
 	newy = accum._.W1;
 	xy->x = newx;
 	xy->y = newy;
@@ -338,13 +338,15 @@ uint16_t vector3_mag(int16_t x, int16_t y, int16_t z)
 
 uint16_t vector2_normalize(int16_t result[], int16_t input[])
 {
+	uint16_t half_magnitude;
 	uint16_t magnitude;
 
 	magnitude = vector2_mag(input[0], input[1]);
-	if (magnitude > 0)
+	half_magnitude = magnitude/2 ; // needed because divsd requires two signed values
+	if (half_magnitude > 0)
 	{
-		result[0] = __builtin_divsd(__builtin_mulss(RMAX, input[0]), magnitude);
-		result[1] = __builtin_divsd(__builtin_mulss(RMAX, input[1]), magnitude);
+		result[0] = __builtin_divsd(__builtin_mulss(RMAX, input[0]/2), half_magnitude);
+		result[1] = __builtin_divsd(__builtin_mulss(RMAX, input[1]/2), half_magnitude);
 	}
 	else
 	{
@@ -355,14 +357,16 @@ uint16_t vector2_normalize(int16_t result[], int16_t input[])
 
 uint16_t vector3_normalize(int16_t result[], int16_t input[])
 {
+	uint16_t half_magnitude;
 	uint16_t magnitude;
 
 	magnitude = vector3_mag(input[0], input[1], input[2]);
-	if (magnitude > 0)
+	half_magnitude = magnitude/2; // needed because divsd requires two signed values
+	if (half_magnitude > 0)
 	{
-		result[0] = __builtin_divsd(__builtin_mulss(RMAX, input[0]), magnitude);
-		result[1] = __builtin_divsd(__builtin_mulss(RMAX, input[1]), magnitude);
-		result[2] = __builtin_divsd(__builtin_mulss(RMAX, input[2]), magnitude);
+		result[0] = __builtin_divsd(__builtin_mulss(RMAX, input[0]/2), half_magnitude);
+		result[1] = __builtin_divsd(__builtin_mulss(RMAX, input[1]/2), half_magnitude);
+		result[2] = __builtin_divsd(__builtin_mulss(RMAX, input[2]/2), half_magnitude);
 	}
 	else
 	{
@@ -392,11 +396,12 @@ int32_t long_scale(int32_t arg1, int16_t arg2)
 		arg2 = -arg2;
 	}
 	product  = __builtin_muluu(arg2, arg1ww._.W1);
+	product <<= 2;
 	accum.WW = __builtin_muluu(arg2, arg1ww._.W0);
+	accum.WW <<= 2;
 	accum._.W0 = accum._.W1;
 	accum._.W1 = 0;
 	product += accum.WW;
-	product <<= 2;
 	if (sign_result > 0)
 	{
 		return product;

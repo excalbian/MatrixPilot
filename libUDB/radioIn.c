@@ -23,6 +23,7 @@
 #include "oscillator.h"
 #include "interrupt.h"
 #include "radioIn.h"
+#include "cll_io.h"
 #include "../MatrixPilot/states.h"
 
 #if (FLY_BY_DATALINK_ENABLED == 1)
@@ -39,7 +40,7 @@
 #define PPM_IC 1
 #endif // PPM_IC
 
-#define MAX_NOISE_RATE 5    // up to 5 PWM "glitches" per second are allowed
+#define MAX_BAD_PULSE_RATE 5    // up to 5 PWM "glitches" per second are allowed
 
 #if (MIPS == 64)
 #define TMR_FACTOR 4
@@ -66,8 +67,8 @@
 int16_t udb_pwIn[NUM_INPUTS+1];     // pulse widths of radio inputs
 int16_t udb_pwTrim[NUM_INPUTS+1];   // initial pulse widths for trimming
 
-static int16_t failSafePulses = 0;
-static int16_t noisePulses = 0;
+static int16_t goodPWMPulseCount = 0;
+static int16_t badPWMPulseCount = 0;
 
 
 void udb_servo_record_trims(void)
@@ -142,6 +143,10 @@ void radioIn_init(void) // was called udb_init_capture(void)
 	if (NUM_INPUTS > 7) IC_INIT(8, REGTOK1, REGTOK2);
 #endif // USE_PPM_INPUT
 #endif // NORADIO
+    
+#if (USE_CASTLE_LINK_THROTTLE == 1)
+    cll_setup();
+#endif
 }
 
 // called from heartbeat pulse at 20Hz
@@ -149,7 +154,7 @@ void radioIn_failsafe_check(void)
 {
 	// check to see if at least one valid pulse has been received,
 	// and also that the noise rate has not been exceeded
-	if ((failSafePulses == 0) || (noisePulses > MAX_NOISE_RATE))
+	if ((goodPWMPulseCount == 0) || (badPWMPulseCount > MAX_BAD_PULSE_RATE))
 	{
 		if (udb_flags._.radio_on == 1)
 		{
@@ -157,19 +162,19 @@ void radioIn_failsafe_check(void)
 			udb_callback_radio_did_turn_off();
 		}
 		led_off(LED_GREEN);
-		noisePulses = 0; // reset count of noise pulses
+		badPWMPulseCount = 0; // reset count of noise pulses
 	}
 	else
 	{
 		udb_flags._.radio_on = 1;
 		led_on(LED_GREEN);
 	}
-	failSafePulses = 0;
+	goodPWMPulseCount = 0;
 }
 
-void radioIn_failsafe_reset(void)
+void radioIn_bad_pulse_count_reset(void)
 {
-	noisePulses = 0;
+	badPWMPulseCount = 0;
 }
 
 #if (NORADIO != 1)
@@ -181,11 +186,11 @@ static void set_udb_pwIn(int pwm, int index)
 	{
 		if ((pwm > FAILSAFE_INPUT_MIN) && (pwm < FAILSAFE_INPUT_MAX))
 		{
-			failSafePulses++;
+			goodPWMPulseCount++;
 		}
 		else
 		{
-			noisePulses++;
+			badPWMPulseCount++;
 		}
 	}
 
@@ -231,6 +236,7 @@ static void set_udb_pwIn(int pwm, int index)
 void __attribute__((__interrupt__,__no_auto_psv__)) _IC##x##Interrupt(void) \
 { \
 	indicate_loading_inter; \
+	set_ipl_on_output_pin; \
 	interrupt_save_set_corcon; \
 	static uint16_t rise = 0; \
 	uint16_t time = 0; \
@@ -242,6 +248,7 @@ void __attribute__((__interrupt__,__no_auto_psv__)) _IC##x##Interrupt(void) \
 	else \
 		set_udb_pwIn(time - rise, x); \
 	interrupt_restore_corcon; \
+	unset_ipl_on_output_pin; \
 }
 #define IC_HANDLER(x, y, z) _IC_HANDLER(x, y, z)
 
@@ -252,7 +259,7 @@ IC_HANDLER(4, REGTOK1, IC_PIN4);
 IC_HANDLER(5, REGTOK1, IC_PIN5);
 IC_HANDLER(6, REGTOK1, IC_PIN6);
 IC_HANDLER(7, REGTOK1, IC_PIN7);
-#if (USE_SONAR_INPUT != 8)
+#if (USE_SONAR_INPUT != 8 && USE_CASTLE_LINK_THROTTLE != 1)
 IC_HANDLER(8, REGTOK1, IC_PIN8);
 #endif // USE_SONAR_INPUT
 
@@ -315,6 +322,7 @@ IC_TIME(PPM_IC, REGTOK1);
 void __attribute__((__interrupt__,__no_auto_psv__)) IC_INTERRUPT(PPM_IC)
 {
 	indicate_loading_inter;
+	set_ipl_on_output_pin;
 	interrupt_save_set_corcon;
 
 	static uint16_t rise_ppm = 0;
@@ -371,6 +379,7 @@ void __attribute__((__interrupt__,__no_auto_psv__)) IC_INTERRUPT(PPM_IC)
 #error Invalid USE_PPM_INPUT setting
 #endif // USE_PPM_INPUT
 	interrupt_restore_corcon;
+	unset_ipl_on_output_pin;
 }
 
 #endif // USE_PPM_INPUT

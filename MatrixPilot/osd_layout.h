@@ -39,6 +39,11 @@
 
 #define OSD_AUTO_HIDE_GPS               1   // Only show Lat, Long, and Num Sats while slow and low.
 
+#define OSD_FLASH_GPS                   0   // Flash GPS SVS on LOW SVS
+#define OSD_FLASH_MIN_SVS               4   // GPS SVS info will flash for SVS less than this
+
+#define OSD_FLASH_RSSI                  0   // Blink RSSI on LOW RSSI
+#define OSD_FLASH_MIN_RSSI              10  // RSSI info will blink for RSSI less than this percent
 
 // OSD Element Locations
 // Set each one to OSD_LOC_DISABLED or OSD_LOC(row, col) from (0, 0) to (12, 29) for NTSC or up to (15, 29) for PAL.
@@ -88,6 +93,7 @@
 #define OSD_LOC_BATT_CURRENT            OSD_LOC(2, 17)      // 4 characters wide
 #define OSD_LOC_BATT_USED               OSD_LOC(2, 22)      // 5 characters wide
 #define OSD_LOC_BATT_VOLTAGE            OSD_LOC(3, 17)      // 4 characters wide
+#define OSD_LOC_BATT_VOLTAGE2           OSD_LOC_DISABLED    // 4 characters wide
 #define OSD_LOC_RSSI                    OSD_LOC(3, 23)      // 4 characters wide
 
 // Set the display vertical offset:

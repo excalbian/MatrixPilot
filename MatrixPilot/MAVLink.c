@@ -60,9 +60,9 @@
 #include "MAVUDBExtra.h"
 #include "../MAVLink/MAVFTP.h"
 
-#if (SILSIM != 1)
+//#if (SILSIM != 1)
 #include "../libUDB/libUDB.h" // Needed for access to RCON
-#endif
+//#endif
 //#include "../libDCM/libDCM_internal.h" // Needed for access to internal DCM value
 #include "../libDCM/rmat.h" // Needed for access to internal DCM value
 #include "../libDCM/gpsData.h"
@@ -139,7 +139,7 @@ static uint16_t mavlink_command_ack_result = 0;
 static void handleMessage(void);
 #if (USE_NV_MEMORY == 1)
 // callback for when nv memory storage is complete
-inline void preflight_storage_complete_callback(boolean success);
+static inline void preflight_storage_complete_callback(boolean success);
 #endif // (USE_NV_MEMORY == 1)
 
 
@@ -204,7 +204,7 @@ int16_t mavlink_serial_send(mavlink_channel_t UNUSED(chan), const uint8_t buf[],
 
 #if (USE_TELELOG == 1)
 //printf("calling log_telemetry with %u bytes\r\n", len);
-	log_telemetry(buf, len);
+	log_telemetry((const char*)buf, len);
 #endif // USE_TELELOG
 
 	// Note at the moment, all channels lead to the one serial port
@@ -650,7 +650,7 @@ static void handleMessage(void)
 	handling_of_message_completed |= MAVParamsHandleMessage(handle_msg);
 	handling_of_message_completed |= MAVMissionHandleMessage(handle_msg);
 	handling_of_message_completed |= MAVFlexiFunctionsHandleMessage(handle_msg);
-	handling_of_message_completed |= MAVFTPHandleMessage(handle_msg);
+//	handling_of_message_completed |= MAVFTPHandleMessage(handle_msg); // WIP - RobD
 
 	if (handling_of_message_completed != false)
 	{
@@ -686,7 +686,7 @@ static void handleMessage(void)
 // Callbacks for triggering command complete messaging
 //
 
-inline void preflight_storage_complete_callback(boolean success)
+static inline void preflight_storage_complete_callback(boolean success)
 {
 	if (mavlink_send_command_ack == false)
 	{
@@ -719,16 +719,13 @@ static boolean is_this_the_moment_to_send(uint8_t counter, uint8_t max_counter)
 	}
 }
 
-// Decide whether it the correct moment to send a given telemetry update, depending on requested frequency
+// Decide whether it is the correct moment to send a given telemetry update,
+//   depending on requested frequency
 static boolean mavlink_frequency_send(uint8_t frequency, uint8_t counter)
 {
 	uint8_t max_counter;
 
-	if (frequency == 0)
-	{
-		return false;
-	}
-	else if (frequency > 0 && frequency < 11)
+	if (frequency > 0 && frequency < 11)
 	{
 		max_counter = mavlink_freq_table[frequency];
 		return is_this_the_moment_to_send(counter, max_counter);
@@ -752,10 +749,7 @@ static boolean mavlink_frequency_send(uint8_t frequency, uint8_t counter)
 	{
 		return true; // send data on every call
 	}
-	else
-	{
-		return false; // should never reach this line
-	}
+	return false;
 }
 #endif // (MAVLINK_TEST_ENCODE_DECODE != 1)
 
@@ -1064,17 +1058,10 @@ void mavlink_output_40hz(void)
 	{
 		MAVUDBExtraOutput(); // Designed to be called at 8Hz.
 	}
-	// Send FORCE information
-	spread_transmission_load = 15;
-	if (mavlink_frequency_send(MAVLINK_RATE_FORCE, mavlink_counter_40hz + spread_transmission_load))
-	{
-		//mavlink_msg_force_send(MAVLINK_COMM_0, msec, aero_force[0], aero_force[1], aero_force[2]);
-//static inline void mavlink_msg_force_send(mavlink_channel_t chan, uint32_t time_boot_ms, int16_t aero_x, int16_t aero_y, int16_t aero_z)
-	}
 	MAVParamsOutput_40hz();
 	MAVMissionOutput_40hz();
 	MAVFlexiFunctionsOutput_40hz();
-	MAVFTPOutput_40hz();
+//	MAVFTPOutput_40hz(); // WIP - RobD
 
 	// Acknowledge a command if flaged to do so.
 	if (mavlink_send_command_ack == true)

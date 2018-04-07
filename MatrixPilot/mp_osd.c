@@ -337,6 +337,12 @@ static void osd_update_values_phase_1(void)
 	int8_t dir_to_goal;
 	int16_t dist_to_goal;
 	struct relative2D curHeading;
+    
+#if (ANALOG_RSSI_INPUT_CHANNEL != CHANNEL_UNUSED || RSSI_INPUT_CHANNEL != CHANNEL_UNUSED)
+#if (OSD_LOC_RSSI != OSD_LOC_DISABLED && OSD_FLASH_RSSI != 0)
+	static char f_OSD_RSSI_flash = 0;        // To keep track on show/hide OSD_RSSI
+#endif
+#endif
 
 	curHeading.x = -rmat[1];
 	curHeading.y = rmat[4];
@@ -410,7 +416,7 @@ static void osd_update_values_phase_1(void)
 	osd_spi_write_number(abs(omegagyro[2])/DEGPERSEC, 3, 0, 0, 0, 0);   // yaw rate in degrees/sec/sec
 #endif
 
-#if (ANALOG_CURRENT_INPUT_CHANNEL != CHANNEL_UNUSED)
+#if (ANALOG_CURRENT_INPUT_CHANNEL != CHANNEL_UNUSED || USE_CASTLE_LINK_THROTTLE == 1)
 
 #if (OSD_LOC_BATT_CURRENT != OSD_LOC_DISABLED)
 	osd_spi_write_location(OSD_LOC_BATT_CURRENT);
@@ -424,7 +430,7 @@ static void osd_update_values_phase_1(void)
 
 #endif
 
-#if (ANALOG_VOLTAGE_INPUT_CHANNEL != CHANNEL_UNUSED)
+#if (ANALOG_VOLTAGE_INPUT_CHANNEL != CHANNEL_UNUSED || USE_CASTLE_LINK_THROTTLE == 1)
 
 #if (OSD_LOC_BATT_VOLTAGE != OSD_LOC_DISABLED)
 	osd_spi_write_location(OSD_LOC_BATT_VOLTAGE);
@@ -433,14 +439,43 @@ static void osd_update_values_phase_1(void)
 
 #endif
 
-#if (ANALOG_RSSI_INPUT_CHANNEL != CHANNEL_UNUSED)
+#if (ANALOG_VOLTAGE2_INPUT_CHANNEL != CHANNEL_UNUSED)
+
+#if (OSD_LOC_BATT_VOLTAGE2 != OSD_LOC_DISABLED)
+	osd_spi_write_location(OSD_LOC_BATT_VOLTAGE2);
+	osd_spi_write_number(battery_voltage2._.W1, 3, 1, 0, 0, 0xA0);   // tenths of Volts
+#endif
+
+#endif
+        
+#if (ANALOG_RSSI_INPUT_CHANNEL != CHANNEL_UNUSED || RSSI_INPUT_CHANNEL != CHANNEL_UNUSED)
 
 #if (OSD_LOC_RSSI != OSD_LOC_DISABLED)
 	osd_spi_write_location(OSD_LOC_RSSI);
+#if (OSD_FLASH_RSSI != 0)
+	if(rc_signal_strength < OSD_FLASH_MIN_RSSI)         // If we has low RC signal strength
+	{
+		if ( f_OSD_RSSI_flash != 0 )                    // If blinking flag is 1
+		{                                               // then shows RSSI
+			osd_spi_write_number(rc_signal_strength, 3, 0, 0, 0, 0xB3);     // RC Receiver signal strength as 0-100%
+			f_OSD_RSSI_flash = 0;                       // Next time RSSI info will be erased
+		}
+		else                                            // else
+		{
+			osd_spi_erase_chars(3);                     // erase RSSI info
+			f_OSD_RSSI_flash = 1;                       // Next time RSSI info will be showed
+		}
+	}
+	else
+	{
+		osd_spi_write_number(rc_signal_strength, 3, 0, 0, 0, 0xB3);     // RC Receiver signal strength as 0-100%
+	}
+#else
 	osd_spi_write_number(rc_signal_strength, 3, 0, 0, 0, 0xB3);     // RC Receiver signal strength as 0-100%
-#endif
+#endif // (OSD_FLASH_RSSI != 0)
+#endif // (OSD_LOC_RSSI != OSD_LOC_DISABLED)
 
-#endif
+#endif // (ANALOG_RSSI_INPUT_CHANNEL != CHANNEL_UNUSED)
 }
 
 static void osd_update_values_phase_2(void)
@@ -455,6 +490,10 @@ static void osd_update_values_phase_2(void)
 
 static void osd_update_values_phase_3(void)
 {
+#if (OSD_FLASH_GPS != 0)
+	static char f_OSD_NUM_SATS_flash = 0;        // To keep track on show or hide OSD_NUM_SATS
+#endif
+
 #if (OSD_LOC_AIR_SPEED_M_S != OSD_LOC_DISABLED)
 	osd_spi_write_location(OSD_LOC_AIR_SPEED_M_S);
 	osd_spi_write_number(air_speed_3DIMU/100, 3, 0, 0, 0, 0);   // speed in m/s
@@ -515,15 +554,42 @@ static void osd_update_values_phase_3(void)
 
 #if (OSD_LOC_NUM_SATS != OSD_LOC_DISABLED)
 	osd_spi_write_location(OSD_LOC_NUM_SATS);
-	if (showGPS)
+#if (OSD_FLASH_GPS != 0)
+	if(svs <= OSD_FLASH_MIN_SVS)                            // I want to run follow code when SVS is LOW
 	{
-		osd_spi_write_number(svs, 0, 0, 0, 0xEB, 0);    // Num satelites locked, with SatDish icon header
+		if ( (f_OSD_NUM_SATS_flash != 0) && showGPS)        // If blinking flag is 1 and showGPS
+		{                                                   // then shows SVS and sat picture
+			osd_spi_write_number(svs, 0, 0, 0, 0xEB, 0);    // Num satelites locked, with SatDish icon header
+			f_OSD_NUM_SATS_flash = 0;                       // Next time GPS info will be erased
+		}
+		else                                                // else
+		{
+			osd_spi_erase_chars(3);                         // erase GPS SVS info
+			f_OSD_NUM_SATS_flash = 1;                       // Next time GPS info will be showed
+		}
 	}
-	else
+	else                                                    // SVS is > than OSD_FLASH_MIN_SVS so do as old code
 	{
-		osd_spi_erase_chars(3);
+		if (showGPS)
+		{
+			osd_spi_write_number(svs, 0, 0, 0, 0xEB, 0);    // Num satelites locked, with SatDish icon header
+		}
+		else
+		{
+			osd_spi_erase_chars(3);
+		}
 	}
-#endif
+#else
+		if (showGPS)
+		{
+			osd_spi_write_number(svs, 0, 0, 0, 0xEB, 0);    // Num satelites locked, with SatDish icon header
+		}
+		else
+		{
+			osd_spi_erase_chars(3);
+		}
+#endif // (OSD_FLASH_GPS != 0)
+#endif // (OSD_LOC_NUM_SATS != OSD_LOC_DISABLED)
 
 #if (OSD_LOC_GPS_LAT != OSD_LOC_DISABLED)
 	osd_spi_write_location(OSD_LOC_GPS_LAT);
@@ -582,6 +648,11 @@ void mp_osd_run_step(uint16_t init_counter) // currently gets called with 'udb_h
 #else
 			osd_spi_write(0x0, 0x48);   // VM0: enable display of OSD image, PAL
 #endif
+			int8_t i;
+			for (i=0; i<16; i++) {
+				osd_spi_write(0x10+i, 0b00000111);  // RB0-15 set to 10%-80%
+			}
+            
 			osd_phase = 0;
 			osd_setup_screen();
 			osd_was_on = 1;

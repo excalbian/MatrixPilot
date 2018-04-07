@@ -23,11 +23,10 @@
 #include "gpsData.h"
 #include "gpsParseCommon.h"
 #include "../libUDB/serialIO.h"
-#include "../libUDB/servoOut.h"
 #include "../libUDB/magnetometer.h"
 #include "mag_drift.h"
 #include "rmat.h"
-
+#include "hilsim.h"
 
 #if (GPS_TYPE == GPS_UBX_2HZ || GPS_TYPE == GPS_UBX_4HZ || GPS_TYPE == GPS_ALL)
 
@@ -57,6 +56,7 @@ static void msg_POSLLH(uint8_t inchar);
 static void msg_DOP(uint8_t inchar);
 static void msg_SOL(uint8_t inchar);
 static void msg_VELNED(uint8_t inchar);
+static void msg_CS0(uint8_t inchar);
 static void msg_CS1(uint8_t inchar);
 
 #if (HILSIM == 1)
@@ -227,26 +227,26 @@ const uint8_t config_NAV5[] = {
 	0xB5, 0x62, // Header
 	0x06, 0x24, // ID
 	0x24, 0x00, // Payload length
-	0xFF, 0xFF, //
-	0x04,       // Dynamic Model Number
-	0x02,       //
+	0xFF, 0xFF, // Bit Mask, 0XFF means apply all of the config below
+	0x08,       // Dynamic Model Number, Airborne with <4g Acceleration
+	0x02,       // Position Fixing Mode. 3D only.
+	0x00, 0x00, // Fixed altitude (mean sea level) for 2D fix mode only.
+	0x00, 0x00, // Part of fixed altitude above (4 bytes in total)
+	0x10, 0x27, // Fixed Altitude variance for 2D Mode (4 bytes)
 	0x00, 0x00, //
-	0x00, 0x00, //
-	0x10, 0x27, //
-	0x00, 0x00, //
-	0x05, 0x00, //
-	0xFA, 0x00, //
-	0xFA, 0x00, //
-	0x64, 0x00, //
-	0x2C, 0x01, //
-	0x00, 0x00, //
-	0x00, 0x00, //
-	0x00, 0x00, //
-	0x00, 0x00, //
-	0x00, 0x00, //
-	0x00, 0x00, //
-	0x00, 0x00, //
-	0x13, 0x77  // Checksum
+	0x05, 0x00, // Minimum Elevation of Sats in degrees (1 byte). Dead Reckoning Limit in Seconds.
+	0xFA, 0x00, // Position DOP Mask (2 bytes)
+	0xFA, 0x00, // Time DOP Mask (2 bytes))
+	0x64, 0x00, // Position Accuracy Mask (2 bytes) Meters)
+	0x2C, 0x01, // Time Accuracy Mask (2 bytes))
+	0x00, 0x00, // Static Hold Threshold (1 bytes). DGPS timeout (1 bytes))
+	0x00, 0x00, // Reserved
+	0x00, 0x00, // Reserved
+	0x00, 0x00, // Reserved
+	0x00, 0x00, // Reserved
+	0x00, 0x00, // Reserved
+	0x00, 0x00, // Reserved
+	0x17, 0xFF  // Checksum
 };
 
 const uint16_t set_rate_length = 14;
@@ -329,7 +329,7 @@ uint8_t* const msg_DOP_parse[] = {
 	&un, &un,                                           // gDOP
 	&un, &un,                                           // pDOP
 	&un, &un,                                           // tDOP
-	&un, &un,                                           // vDOP
+	&vdop_._.B0, &vdop_._.B1,                           // vDOP
 	&hdop_._.B0, &hdop_._.B1,                           // hDOP
 	&un, &un,                                           // nDOP
 	&un, &un,                                           // eDOP
@@ -559,53 +559,56 @@ static void msg_PL1(uint8_t gpschar)
 	switch (msg_class) {
 		case 0x01 : {
 			switch (msg_id) {
-				case 0x02 : { // NAV-POSLLH message
+				case 0x02 : { // NAV_POSLLH message
 					if (payloadlength.BB  == NUM_POINTERS_IN(msg_POSLLH_parse))
 					{
 						msg_parse = &msg_POSLLH;
 					}
 					else
 					{
+						gps_parse_errors++;
 						msg_parse = &msg_B3;    // error condition
 					}
 					break;
 				}
-				case 0x04 : { // NAV-DOP message
+				case 0x04 : { // NAV_DOP message
 					if (payloadlength.BB  == NUM_POINTERS_IN(msg_DOP_parse))
 					{
 						msg_parse = &msg_DOP;
 					}
 					else
 					{
+						gps_parse_errors++;
 						msg_parse = &msg_B3;    // error condition
 					}
 					break;
 				}
-				case 0x06 : { // NAV-SOL message
+				case 0x06 : { // NAV_SOL message
 					if (payloadlength.BB  == NUM_POINTERS_IN(msg_SOL_parse))
 					{
 						msg_parse = &msg_SOL;
 					}
 					else
 					{
+						gps_parse_errors++;
 						msg_parse = &msg_B3;    // error condition
 					}
 					break;
 				}
-				case 0x12 : { // NAV-VELNED message
+				case 0x12 : { // NAV_VELNED message
 					if (payloadlength.BB  == NUM_POINTERS_IN(msg_VELNED_parse))
 					{
 						msg_parse = &msg_VELNED;
 					}
 					else
 					{
+						gps_parse_errors++;
 						msg_parse = &msg_B3;    // error condition
 					}
-					msg_parse = &msg_VELNED;    // TODO: this does not look right (wipes out error setting above) - RobD
 					break;
 				}
 #if (HILSIM == 1)
-				case 0xAB : { // NAV-BODYRATES message - THIS IS NOT AN OFFICIAL UBX MESSAGE
+				case 0xAB : { // NAV_BODYRATES message - THIS IS NOT AN OFFICIAL UBX MESSAGE
 					// WE ARE FAKING THIS FOR HIL SIMULATION
 					if (payloadlength.BB  == NUM_POINTERS_IN(msg_BODYRATES_parse))
 					{
@@ -617,7 +620,7 @@ static void msg_PL1(uint8_t gpschar)
 					}
 					break;
 				}
-				case 0xAC : { // NAV-KEYSTROKE message - THIS IS NOT AN OFFICIAL UBX MESSAGE
+				case 0xAC : { // NAV_KEYSTROKE message - THIS IS NOT AN OFFICIAL UBX MESSAGE
 					// WE ARE FAKING THIS FOR HIL SIMULATION
 					if (payloadlength.BB ==  NUM_POINTERS_IN(msg_KEYSTROKE_parse))
 					{
@@ -625,7 +628,7 @@ static void msg_PL1(uint8_t gpschar)
 					}
 					else
 					{
-						printf("NAV-KEYSTROKE, bad payloadlength %i != %i\r\n", payloadlength.BB, (int)NUM_POINTERS_IN(msg_KEYSTROKE_parse));
+						printf("NAV_KEYSTROKE, bad payloadlength %i != %i\r\n", payloadlength.BB, (int)NUM_POINTERS_IN(msg_KEYSTROKE_parse));
 						msg_parse = &msg_B3;    // error condition
 					}
 					break;
@@ -794,7 +797,7 @@ static void msg_ACK_ID(uint8_t gpschar)
 	ack_id = gpschar;
 	CK_A += gpschar;
 	CK_B += CK_A;
-	msg_parse = &msg_CS1;
+	msg_parse = &msg_CS0;
 }
 
 static void msg_MSGU(uint8_t gpschar)
@@ -813,6 +816,12 @@ static void msg_MSGU(uint8_t gpschar)
 		checksum._.B1 = gpschar;
 		msg_parse = &msg_CS1;
 	}
+}
+
+static void msg_CS0(uint8_t gpschar)
+{
+	checksum._.B1 = gpschar;
+	msg_parse = &msg_CS1;
 }
 
 static void msg_CS1(uint8_t gpschar)
@@ -840,6 +849,7 @@ static void msg_CS1(uint8_t gpschar)
 	}
 	else
 	{
+		gps_parse_errors++;
 		gps_data_age = GPS_DATA_MAX_AGE+1;  // if the checksum is wrong then the data from this packet is invalid. 
 		                                    // setting this ensures the nav routine does not try to use this data.
 	}
@@ -868,6 +878,7 @@ void gps_commit_data(void)
 
 	climb_gps.BB    = - climb_gps_._.W0;            // SIRF uses 2 byte climb rate, UBX provides 4 bytes
 	hdop            = (uint8_t)(hdop_.BB / 20);     // SIRF scales HDOP by 5, UBX by 10^-2
+	vdop		= (uint8_t)(vdop_.BB / 20);
 	// SIRF provides position in m, UBX provides cm
 //	xpg.WW          = xpg_.WW / 100;
 //	ypg.WW          = ypg_.WW / 100;
@@ -916,70 +927,6 @@ void HILSIM_saturate(int16_t size, int16_t vector[3])
 		{
 			vector[index] = -RMAX;
 		}
-	}
-}
-
-void hil_rc_input_adjust(char *inChannelName, int inChannelIndex, int delta)
-{
-	udb_pwIn[inChannelIndex] = udb_servo_pulsesat(udb_pwIn[inChannelIndex] + delta);
-	if (inChannelIndex == THROTTLE_INPUT_CHANNEL) {
-		printf("%s = %d%%\n", inChannelName, (udb_pwIn[inChannelIndex]-udb_pwTrim[inChannelIndex])/20);
-	}
-	else {
-		printf("%s = %d%%\n", inChannelName, (udb_pwIn[inChannelIndex]-udb_pwTrim[inChannelIndex])/10);
-	}
-}
-
-#define KEYPRESS_INPUT_DELTA 50
-
-void hilsim_handle_key_input(char c)
-{
-	switch (c) {
-		case 107: // Numpad +
-			hil_rc_input_adjust("throttle", THROTTLE_INPUT_CHANNEL, KEYPRESS_INPUT_DELTA*2);
-			break;
-		case 109: // Numpad -
-			hil_rc_input_adjust("throttle", THROTTLE_INPUT_CHANNEL, -KEYPRESS_INPUT_DELTA*2);
-			break;
-		case 97:  // Numpad 1
-			hil_rc_input_adjust("rudder", RUDDER_INPUT_CHANNEL, KEYPRESS_INPUT_DELTA);
-			break;
-		case 99:  // Numpad 3
-			hil_rc_input_adjust("rudder", RUDDER_INPUT_CHANNEL, -KEYPRESS_INPUT_DELTA);
-			break;
-		case 104: // Numpad 8
-			hil_rc_input_adjust("elevator", ELEVATOR_INPUT_CHANNEL, KEYPRESS_INPUT_DELTA);
-			break;
-		case 98:  // Numpad 2
-			hil_rc_input_adjust("elevator", ELEVATOR_INPUT_CHANNEL, -KEYPRESS_INPUT_DELTA);
-			break;
-		case 100: // Numpad 4
-			hil_rc_input_adjust("aileron", AILERON_INPUT_CHANNEL, KEYPRESS_INPUT_DELTA);
-			break;
-		case 102: // Numpad 6
-			hil_rc_input_adjust("aileron", AILERON_INPUT_CHANNEL, -KEYPRESS_INPUT_DELTA);
-			break;
-		case 101: // Numpad 5
-			printf("\naileron, elevator, rudder = 0%%\n");
-			udb_pwIn[AILERON_INPUT_CHANNEL] = udb_pwTrim[AILERON_INPUT_CHANNEL];
-			udb_pwIn[ELEVATOR_INPUT_CHANNEL] = udb_pwTrim[ELEVATOR_INPUT_CHANNEL];
-			udb_pwIn[RUDDER_INPUT_CHANNEL] = udb_pwTrim[RUDDER_INPUT_CHANNEL];
-			printf("\naileron, elevator, rudder = %i, %i, %i\n", udb_pwIn[AILERON_INPUT_CHANNEL], udb_pwIn[ELEVATOR_INPUT_CHANNEL], udb_pwIn[RUDDER_INPUT_CHANNEL]);
-			break;
-				case 35: // '1' Numpad End (switch mode to manual)
-			udb_pwIn[MODE_SWITCH_INPUT_CHANNEL] = MODE_SWITCH_THRESHOLD_LOW - 1;
-			break;
-				case 111: // '2' Numpad / (switch mode to stabilised)
-			udb_pwIn[MODE_SWITCH_INPUT_CHANNEL] = MODE_SWITCH_THRESHOLD_LOW + 1;
-			break;
-				case 106: // '3' Numpad * (switch mode to guided)
-			udb_pwIn[MODE_SWITCH_INPUT_CHANNEL] = MODE_SWITCH_THRESHOLD_HIGH + 1;
-			break;
-				case 36: // '4' Numpad Home (switch mode to failsafe)
-			udb_pwIn[FAILSAFE_INPUT_CHANNEL] = FAILSAFE_INPUT_MIN - 1;
-			break;
-		default:
-			break;
 	}
 }
 
